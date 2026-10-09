@@ -18,8 +18,12 @@ A video-sharing platform frontend built with **Next.js, React, and TypeScript**,
 * React
 * TypeScript
 * Tailwind CSS
-* Django REST Framework backend
+* Django REST Framework
 * JWT authentication
+
+## Related Repository
+
+* **Backend:** [VideoPlatform-Backend](https://github.com/Mehr3had/VideoPlatform-Backend)
 
 ## Prerequisites
 
@@ -27,9 +31,7 @@ Make sure the following tools are installed:
 
 * Node.js and npm
 * Git
-* The [VideoPlatform backend](https://github.com/Mehr3had/VideoPlatform-Backend) or a compatible Django API server
-
-> Replace the backend repository link above if your backend repository uses a different URL.
+* The [VideoPlatform backend](https://github.com/Mehr3had/VideoPlatform-Backend), running locally
 
 ## Getting Started
 
@@ -54,13 +56,19 @@ Create a `.env.local` file in the project root:
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 ```
 
-This variable defines the base URL of the Django backend. Update it if your backend runs at a different address.
+This variable defines the base URL of the Django backend. Update it if the backend runs at a different address.
 
 The frontend uses this variable to construct API endpoints and backend resource URLs.
 
-**Note:** `NEXT_PUBLIC_` variables are exposed to the browser. Never store passwords, secret keys, or private tokens in them.
+**Security note:** Variables prefixed with `NEXT_PUBLIC_` can be exposed to the browser. Never store passwords, secret keys, or private credentials in them.
 
-### 4. Start the development server
+### 4. Start the backend
+
+Follow the setup instructions in the [backend repository](https://github.com/Mehr3had/VideoPlatform-Backend).
+
+Make sure the Django database migrations have been applied and the backend is running at `http://127.0.0.1:8000`.
+
+### 5. Start the frontend
 
 ```bash
 npm run dev
@@ -68,7 +76,9 @@ npm run dev
 
 Open http://localhost:3000 in your browser.
 
-Make sure the Django backend is running and its API, authentication, and media settings are configured correctly.
+Make sure Django allows requests from `http://localhost:3000` through its CORS configuration.
+
+**Note:** The local database and uploaded video files are not included in this repository. You may need to create an account and upload sample videos to test all features.
 
 ## Production Build
 
@@ -107,13 +117,13 @@ src/
 
 ## Backend Integration
 
-The frontend communicates with a Django REST API. The API base URL is centralized in `src/lib/api.ts`, allowing the backend address to be configured through an environment variable.
+The frontend communicates with a Django REST API. The API base URL is configured through `NEXT_PUBLIC_API_URL` and centralized in `src/lib/api.ts`.
 
-For local development, the backend and frontend typically run on ports `8000` and `3000`, respectively. Django must allow requests from the frontend origin through its CORS configuration.
+For local development, the backend and frontend typically run on ports `8000` and `3000`, respectively. The backend must be running for API-dependent features to work.
 
 ## Status
 
-This project is under development and is intended as a full-stack learning and portfolio project.
+This project is a full-stack learning and portfolio project and is under development.
 
 ## License
 
