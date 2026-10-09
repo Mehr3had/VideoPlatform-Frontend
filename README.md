@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VideoPlatform — Frontend
+
+A video-sharing platform frontend built with **Next.js, React, and TypeScript**, integrated with a Django REST API backend.
+
+## Features
+
+* **Authentication:** User registration and login with JWT-based authentication.
+* **Video browsing:** Browse videos, search content, filter by category, and explore trending videos.
+* **Video playback:** Watch videos and interact through likes, dislikes, and comments.
+* **User profiles:** View user profiles, browse uploaded videos, and manage subscriptions.
+* **Creator dashboard:** Upload videos, edit existing videos, and manage uploaded content.
+* **Account settings:** Update profile information and manage account credentials.
+* **Responsive interface:** A component-based UI designed for a video-sharing experience.
+
+## Tech Stack
+
+* Next.js (App Router)
+* React
+* TypeScript
+* Tailwind CSS
+* Django REST Framework backend
+* JWT authentication
+
+## Prerequisites
+
+Make sure the following tools are installed:
+
+* Node.js and npm
+* Git
+* The [VideoPlatform backend](https://github.com/Mehr3had/VideoPlatform-Backend) or a compatible Django API server
+
+> Replace the backend repository link above if your backend repository uses a different URL.
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Mehr3had/VideoPlatform-Frontend.git
+cd VideoPlatform-Frontend
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+This variable defines the base URL of the Django backend. Update it if your backend runs at a different address.
+
+The frontend uses this variable to construct API endpoints and backend resource URLs.
+
+**Note:** `NEXT_PUBLIC_` variables are exposed to the browser. Never store passwords, secret keys, or private tokens in them.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Make sure the Django backend is running and its API, authentication, and media settings are configured correctly.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Production Build
 
-## Learn More
+To create an optimized production build:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To run the production build locally:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run start
+```
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+src/
+├── app/
+│   ├── dashboard/
+│   │   ├── edit/[id]/
+│   │   └── upload/
+│   ├── login/
+│   ├── profile/
+│   │   ├── [id]/
+│   │   └── edit/
+│   ├── register/
+│   ├── settings/
+│   └── videos/[id]/
+├── components/
+│   └── Navbar.tsx
+└── lib/
+    └── api.ts
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Backend Integration
+
+The frontend communicates with a Django REST API. The API base URL is centralized in `src/lib/api.ts`, allowing the backend address to be configured through an environment variable.
+
+For local development, the backend and frontend typically run on ports `8000` and `3000`, respectively. Django must allow requests from the frontend origin through its CORS configuration.
+
+## Status
+
+This project is under development and is intended as a full-stack learning and portfolio project.
+
+## License
+
+No license has been specified yet.
