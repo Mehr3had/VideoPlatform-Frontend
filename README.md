@@ -29,7 +29,8 @@ A video-sharing platform frontend built with **Next.js, React, and TypeScript**,
 
 Make sure the following tools are installed:
 
-* Node.js and npm
+* Node.js v24.21.0 (tested locally)
+* npm 11.19.0 (tested locally)
 * Git
 * The [VideoPlatform backend](https://github.com/Mehr3had/VideoPlatform-Backend), running locally
 
@@ -101,14 +102,18 @@ src/
 ├── app/
 │   ├── dashboard/
 │   │   ├── edit/[id]/
-│   │   └── upload/
+│   │   ├── upload/
+│   │   └── page.tsx
 │   ├── login/
 │   ├── profile/
 │   │   ├── [id]/
 │   │   └── edit/
 │   ├── register/
 │   ├── settings/
-│   └── videos/[id]/
+│   ├── videos/[id]/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
 ├── components/
 │   └── Navbar.tsx
 └── lib/

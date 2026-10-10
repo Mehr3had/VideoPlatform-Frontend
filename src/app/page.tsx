@@ -10,7 +10,7 @@ export default function Home() {
   const [trendingVideos, setTrendingVideos] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-
+  const [categories, setCategories] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -66,6 +66,25 @@ export default function Home() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API}/categories/`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Categories error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     fetchVideos();
     fetchTrendingVideos();
@@ -112,10 +131,11 @@ export default function Home() {
             className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-600"
           >
             <option value="">All Categories</option>
-            <option value="1">Gaming</option>
-            <option value="2">Movies</option>
-            <option value="3">Music</option>
-            <option value="4">Technology</option>
+            {categories.map((item) => (
+              <option key={item.id} value={String(item.id)}>
+                {item.name}
+              </option>
+            ))}
           </select>
 
           <button
