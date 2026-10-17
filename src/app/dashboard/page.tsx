@@ -161,7 +161,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
 
             <Navbar />
 
@@ -170,11 +170,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
 
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                             Dashboard
                         </h1>
 
-                        <p className="mt-2 text-gray-500">
+                        <p className="mt-2 text-gray-500 dark:text-gray-400">
                             Manage your videos.
                         </p>
                     </div>
@@ -190,62 +190,62 @@ export default function DashboardPage() {
 
                 <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Videos
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.videos_count}
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Subscribers
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.subscribers_count}
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Total Views
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.total_views}
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Total Likes
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.total_likes}
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Total Comments
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.total_comments}
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">
+                    <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818]">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Following
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
                             {stats.following_count}
                         </p>
                     </div>
@@ -254,9 +254,9 @@ export default function DashboardPage() {
 
                 {videos.length === 0 ? (
 
-                    <div className="mt-10 rounded-xl bg-white p-10 text-center shadow-sm">
+                    <div className="mt-10 rounded-xl bg-white p-10 text-center shadow-sm dark:bg-[#181818]">
 
-                        <p className="text-gray-500">
+                        <p className="text-gray-500 dark:text-gray-400">
                             You haven't uploaded any videos yet.
                         </p>
 
@@ -271,17 +271,17 @@ export default function DashboardPage() {
 
                 ) : (
 
-                    <div className="mt-10 overflow-hidden rounded-xl bg-white shadow-sm">
+                    <div className="mt-10 overflow-hidden rounded-xl bg-white shadow-sm dark:bg-[#181818]">
 
-                        <div className="border-b px-6 py-4">
+                        <div className="border-b border-gray-200 px-6 py-4 dark:border-[#303030]">
 
-                            <h2 className="font-semibold text-gray-900">
+                            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
                                 Your Videos
                             </h2>
 
                         </div>
 
-                        <div className="divide-y">
+                        <div className="divide-y divide-gray-200 dark:divide-[#303030]">
 
                             {videos.map((video) => (
 
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                                             className="h-28 w-48 rounded-lg object-cover"
                                         />
                                     ) : (
-                                        <div className="flex h-28 w-48 items-center justify-center rounded-lg bg-gray-200 text-gray-500">
+                                        <div className="flex h-28 w-48 items-center justify-center rounded-lg bg-gray-200 text-gray-500 dark:bg-[#303030] dark:text-gray-400">
                                             No thumbnail
                                         </div>
                                     )}
@@ -306,22 +306,22 @@ export default function DashboardPage() {
 
                                         <Link
                                             href={`/videos/${video.id}`}
-                                            className="text-lg font-semibold text-gray-900 hover:text-red-700"
+                                            className="text-lg font-semibold text-gray-900 hover:text-red-700 dark:text-gray-100 dark:hover:text-red-400"
                                         >
                                             {video.title}
                                         </Link>
 
-                                        <p className="mt-2 text-sm text-gray-500">
+                                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                             {video.views_count} views
                                         </p>
 
-                                        <div className="mt-3 flex gap-4 text-sm text-gray-500">
+                                        <div className="mt-3 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
                                             <span>👍 {video.likes_count}</span>
                                             <span>👎 {video.dislikes_count}</span>
                                             <span>💬 {video.comments_count}</span>
                                         </div>
 
-                                        <p className="mt-1 line-clamp-2 text-sm text-gray-500">
+                                        <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                             {video.description}
                                         </p>
 
@@ -331,7 +331,7 @@ export default function DashboardPage() {
 
                                         <Link
                                             href={`/dashboard/edit/${video.id}`}
-                                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:text-gray-300 dark:hover:bg-[#252525]"
                                         >
                                             Edit
                                         </Link>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
                                             onClick={() =>
                                                 handleDelete(video.id)
                                             }
-                                            className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                                            className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-950"
                                         >
                                             Delete
                                         </button>

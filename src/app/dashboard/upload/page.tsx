@@ -133,24 +133,24 @@ export default function UploadPage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
 
             <Navbar />
 
             <section className="mx-auto max-w-2xl px-6 py-10">
 
-                <div className="rounded-xl bg-white p-8 shadow-sm">
+                <div className="rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]">
 
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                         Upload Video
                     </h1>
 
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">
                         Share a new video with your audience.
                     </p>
 
                     {error && (
-                        <div className="mt-6 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
                             {error}
                         </div>
                     )}
@@ -162,7 +162,7 @@ export default function UploadPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Title
                             </label>
 
@@ -173,7 +173,7 @@ export default function UploadPage() {
                                     setTitle(e.target.value)
                                 }
                                 required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                                 placeholder="Enter video title"
                             />
 
@@ -181,7 +181,7 @@ export default function UploadPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Description
                             </label>
 
@@ -191,7 +191,7 @@ export default function UploadPage() {
                                     setDescription(e.target.value)
                                 }
                                 rows={5}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                                 placeholder="Describe your video"
                             />
 
@@ -199,7 +199,7 @@ export default function UploadPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Category
                             </label>
 
@@ -208,10 +208,13 @@ export default function UploadPage() {
                                 onChange={(e) =>
                                     setCategoryId(e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                             >
 
-                                <option value="">
+                                <option
+                                    value=""
+                                    className="bg-white text-gray-900 dark:bg-[#202020] dark:text-gray-100"
+                                >
                                     Select category
                                 </option>
 
@@ -219,6 +222,7 @@ export default function UploadPage() {
                                     <option
                                         key={category.id}
                                         value={category.id}
+                                        className="bg-white text-gray-900 dark:bg-[#202020] dark:text-gray-100"
                                     >
                                         {category.name}
                                     </option>
@@ -230,7 +234,7 @@ export default function UploadPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Video File
                             </label>
 
@@ -243,14 +247,14 @@ export default function UploadPage() {
                                     )
                                 }
                                 required
-                                className="w-full rounded-lg border border-gray-300 p-3"
+                                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
                             />
 
                         </div>
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Thumbnail
                             </label>
 
@@ -262,7 +266,7 @@ export default function UploadPage() {
                                         e.target.files?.[0] || null
                                     )
                                 }
-                                className="w-full rounded-lg border border-gray-300 p-3"
+                                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
                             />
 
                         </div>

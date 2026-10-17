@@ -152,13 +152,13 @@ export default function ProfilePage() {
 
     return (
 
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
 
             <Navbar />
 
             <section className="mx-auto max-w-5xl px-8 py-10">
 
-                <div className="rounded-xl bg-white p-8 shadow-sm">
+                <div className="rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]">
 
                     <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
 
@@ -174,7 +174,7 @@ export default function ProfilePage() {
 
                             ) : (
 
-                                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-3xl font-bold text-gray-500">
+                                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-3xl font-bold text-gray-500 dark:bg-[#303030] dark:text-gray-300">
                                     {profile.username.charAt(0).toUpperCase()}
                                 </div>
 
@@ -182,11 +182,11 @@ export default function ProfilePage() {
 
                             <div>
 
-                                <h1 className="text-3xl font-bold text-gray-900">
+                                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                                     {profile.username}
                                 </h1>
 
-                                <p className="mt-2 text-gray-600">
+                                <p className="mt-2 text-gray-600 dark:text-gray-400">
                                     {profile.bio || "No bio yet."}
                                 </p>
 
@@ -200,14 +200,14 @@ export default function ProfilePage() {
                                 <>
                                     <Link
                                         href="/dashboard"
-                                        className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+                                        className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 dark:bg-[#303030] dark:hover:bg-[#404040]"
                                     >
                                         Dashboard
                                     </Link>
 
                                     <Link
                                         href="/profile/edit"
-                                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                                     >
                                         Edit Profile
                                     </Link>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                                     onClick={handleSubscribe}
                                     className={`rounded-lg px-5 py-2.5 text-sm font-medium ${
                                         profile.is_subscribed
-                                        ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                        ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                                         : "bg-red-700 text-white hover:bg-red-800"
                                     }`}
                                 >
@@ -233,17 +233,17 @@ export default function ProfilePage() {
 
                     </div>
 
-                    <div className="mt-6 flex gap-6 text-sm text-gray-600">
+                    <div className="mt-6 flex gap-6 text-sm text-gray-600 dark:text-gray-400">
 
                         <span>
-                            <strong className="text-gray-900">
+                            <strong className="text-gray-900 dark:text-gray-100">
                                 {profile.videos_count}
                             </strong>{" "}
                             Videos
                         </span>
 
                         <span>
-                            <strong className="text-gray-900">
+                            <strong className="text-gray-900 dark:text-gray-100">
                                 {profile.subscribers_count}
                             </strong>{" "}
                             Subscribers
@@ -255,13 +255,13 @@ export default function ProfilePage() {
 
                 <section className="mt-10">
 
-                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
+                    <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
                         Videos
                     </h2>
 
                     {videos.length === 0 ? (
 
-                        <p className="text-gray-500">
+                        <p className="text-gray-500 dark:text-gray-400">
                             No videos yet.
                         </p>
 
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                                 <a
                                     key={video.id}
                                     href={`/videos/${video.id}`}
-                                    className="block overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md"
+                                    className="block overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md dark:bg-[#181818] dark:hover:bg-[#202020]"
                                 >
 
                                     {video.thumbnail && (
@@ -289,11 +289,11 @@ export default function ProfilePage() {
 
                                     <div className="p-5">
 
-                                        <h3 className="text-lg font-semibold text-gray-900">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                             {video.title}
                                         </h3>
 
-                                        <p className="mt-2 text-sm text-gray-500">
+                                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                             {video.views_count} views
                                         </p>
 

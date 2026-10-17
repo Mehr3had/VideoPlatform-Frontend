@@ -9,6 +9,7 @@ import { API } from "@/lib/api";
 export default function RegisterPage() {
 
     const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
     const [error, setError] = useState("");
@@ -32,7 +33,7 @@ export default function RegisterPage() {
         try {
 
             const response = await fetch(
-                `${API}/register`,
+                `${API}/register/`,
                 {
                     method: "POST",
 
@@ -42,6 +43,7 @@ export default function RegisterPage() {
 
                     body: JSON.stringify({
                         username: username,
+                        email: email,
                         password: password,
                         password_confirm: passwordConfirm,
                     }),
@@ -84,24 +86,24 @@ export default function RegisterPage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
 
             <Navbar />
 
             <section className="flex justify-center px-6 py-16">
 
-                <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
+                <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]">
 
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                         Create Account
                     </h1>
 
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">
                         Join VideoPlatform today.
                     </p>
 
                     {error && (
-                        <div className="mt-6 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
                             {error}
                         </div>
                     )}
@@ -113,7 +115,7 @@ export default function RegisterPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Username
                             </label>
 
@@ -124,15 +126,32 @@ export default function RegisterPage() {
                                     setUsername(e.target.value)
                                 }
                                 required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                                 placeholder="Enter username"
                             />
 
                         </div>
 
                         <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Email
+                            </label>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                autoComplete="email"
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
+                                placeholder="Enter your email address"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+
+                        <div>
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Password
                             </label>
 
@@ -143,7 +162,7 @@ export default function RegisterPage() {
                                     setPassword(e.target.value)
                                 }
                                 required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                                 placeholder="Enter password"
                             />
 
@@ -151,7 +170,7 @@ export default function RegisterPage() {
 
                         <div>
 
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Confirm Password
                             </label>
 
@@ -162,7 +181,7 @@ export default function RegisterPage() {
                                     setPasswordConfirm(e.target.value)
                                 }
                                 required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-red-700"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                                 placeholder="Confirm password"
                             />
 
@@ -180,13 +199,22 @@ export default function RegisterPage() {
 
                     </form>
 
-                    <p className="mt-6 text-center text-sm text-gray-500">
+                    <div className="mt-2 text-center">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-base font-medium text-white transition hover:bg-blue-700"
+                        >
+                            ← Back to Home
+                        </Link>
+                    </div>
+
+                    <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
 
                         Already have an account?{" "}
 
                         <Link
                             href="/login"
-                            className="font-medium text-red-700 hover:text-red-800"
+                            className="font-medium text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
                             Login
                         </Link>

@@ -103,19 +103,19 @@ export default function EditProfilePage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
             <Navbar />
 
             <section className="mx-auto max-w-2xl px-8 py-10">
-                <div className="rounded-xl bg-white p-8 shadow-sm">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                <div className="rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         Edit Profile
                     </h1>
 
                     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Bio
                             </label>
 
@@ -123,13 +123,13 @@ export default function EditProfilePage() {
                                 value={bio}
                                 onChange={(event) => setBio(event.target.value)}
                                 rows={5}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-gray-500"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-gray-500"
                                 placeholder="Tell us something about yourself..."
                             />
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Profile Image
                             </label>
 
@@ -141,7 +141,7 @@ export default function EditProfilePage() {
                                         event.target.files?.[0] || null
                                     )
                                 }
-                                className="block w-full text-sm text-gray-600"
+                                className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
                             />
                         </div>
 
@@ -149,7 +149,7 @@ export default function EditProfilePage() {
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                                className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 dark:bg-[#303030] dark:hover:bg-[#404040]"
                             >
                                 {saving ? "Saving..." : "Save Changes"}
                             </button>
@@ -157,7 +157,7 @@ export default function EditProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => router.back()}
-                                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                             >
                                 Cancel
                             </button>

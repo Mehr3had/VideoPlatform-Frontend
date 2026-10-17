@@ -149,18 +149,18 @@ export default function EditVideoPage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-100">
+        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
             <Navbar />
 
             <section className="mx-auto max-w-2xl px-6 py-10">
-                <div className="rounded-xl bg-white p-8 shadow-sm">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                <div className="rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         Edit Video
                     </h1>
 
                     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Title
                             </label>
 
@@ -168,12 +168,12 @@ export default function EditVideoPage() {
                                 required
                                 value={title}
                                 onChange={(event) => setTitle(event.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-gray-500"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                             />
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Category
                             </label>
 
@@ -181,12 +181,21 @@ export default function EditVideoPage() {
                                 value={categoryId}
                                 onChange={(event) => setCategoryId(event.target.value)}
                                 required
-                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                             >
-                                <option value="">Select a category</option>
+                                <option
+                                    value=""
+                                    className="bg-white text-gray-900 dark:bg-[#202020] dark:text-gray-100"
+                                >
+                                    Select a category
+                                </option>
 
                                 {categories.map((category) => (
-                                    <option key={category.id} value={String(category.id)}>
+                                    <option
+                                        key={category.id}
+                                        value={String(category.id)}
+                                        className="bg-white text-gray-900 dark:bg-[#202020] dark:text-gray-100"
+                                    >
                                         {category.name}
                                     </option>
                                 ))}
@@ -194,7 +203,7 @@ export default function EditVideoPage() {
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Description
                             </label>
 
@@ -202,12 +211,12 @@ export default function EditVideoPage() {
                                 value={description}
                                 onChange={(event) => setDescription(event.target.value)}
                                 rows={5}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-gray-500"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                             />
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Replace Video (optional)
                             </label>
 
@@ -217,12 +226,12 @@ export default function EditVideoPage() {
                                 onChange={(event) =>
                                     setVideoFile(event.target.files?.[0] ?? null)
                                 }
-                                className="block w-full text-sm text-gray-600"
+                                className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
                             />
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Replace Thumbnail (optional)
                             </label>
 
@@ -232,7 +241,7 @@ export default function EditVideoPage() {
                                 onChange={(event) =>
                                     setThumbnail(event.target.files?.[0] ?? null)
                                 }
-                                className="block w-full text-sm text-gray-600"
+                                className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
                             />
                         </div>
 
@@ -248,7 +257,7 @@ export default function EditVideoPage() {
                             <button
                                 type="button"
                                 onClick={() => router.back()}
-                                className="rounded-lg border border-gray-300 px-5 py-3 font-medium text-gray-700 hover:bg-gray-50"
+                                className="rounded-lg border border-gray-300 px-5 py-3 font-medium text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:text-gray-300 dark:hover:bg-[#252525]"
                             >
                                 Cancel
                             </button>

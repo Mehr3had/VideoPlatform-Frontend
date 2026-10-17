@@ -103,13 +103,13 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
 
       <Navbar />
 
       <section className="px-8 py-12">
 
-        <h2 className="mb-8 text-3xl font-bold text-gray-900">
+        <h2 className="mb-8 text-3xl font-bold text-gray-900 dark:text-gray-100">
           Latest Videos
         </h2>
 
@@ -122,13 +122,13 @@ export default function Home() {
             placeholder="Search videos..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-600"
+            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-600 dark:border-[#404040] dark:bg-[#181818] dark:text-gray-100"
           />
 
           <select
             value={category}
             onChange={handleCategoryChange}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-600"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-600 dark:border-[#404040] dark:bg-[#181818] dark:text-gray-100"
           >
             <option value="">All Categories</option>
             {categories.map((item) => (
@@ -152,7 +152,7 @@ export default function Home() {
         {trendingVideos.length > 0 && (
           <section className="mb-12">
 
-            <h2 className="mb-6 text-2xl font-bold text-gray-900">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
               🔥 Trending Videos
             </h2>
 
@@ -161,7 +161,7 @@ export default function Home() {
                 <Link
                   key={video.id}
                   href={`/videos/${video.id}`}
-                  className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md"
+                  className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md dark:bg-[#181818] dark:hover:bg-[#202020]"
                 >
 
                   {video.thumbnail && (
@@ -174,11 +174,11 @@ export default function Home() {
 
                   <div className="p-5">
 
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {video.title}
                     </h3>
 
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       {video.username} • {video.views_count} views
                     </p>
                   </div>
@@ -199,7 +199,7 @@ export default function Home() {
             <Link
               key={video.id}
               href={`/videos/${video.id}`}
-              className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md"
+              className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md dark:bg-[#181818] dark:hover:bg-[#202020]"
             >
 
               {video.thumbnail && (
@@ -212,16 +212,16 @@ export default function Home() {
 
               <div className="p-5">
 
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {video.title}
                 </h3>
 
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                   {video.username} • {video.views_count} views
                 </p>
 
                 {video.category_name && (
-                  <p className="mt-2 text-xs font-medium text-red-700">
+                  <p className="mt-2 text-xs font-medium text-red-700 dark:text-red-400">
                     {video.category_name}
                   </p>
                 )}
@@ -237,7 +237,7 @@ export default function Home() {
         {/* Empty State */}
 
         {videos.length === 0 && (
-          <p className="mt-10 text-center text-gray-500">
+          <p className="mt-10 text-center text-gray-500 dark:text-gray-400">
             No videos found.
           </p>
         )}
@@ -250,19 +250,19 @@ export default function Home() {
             <button
               onClick={() => setPage((prev) => prev - 1)}
               disabled={page === 1}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#404040] dark:bg-[#181818] dark:text-gray-300 dark:hover:bg-[#252525]"
             >
               ← Previous
             </button>
 
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Page {page} of {totalPages}
             </span>
 
             <button
               onClick={() => setPage((prev) => prev + 1)}
               disabled={page === totalPages}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#404040] dark:bg-[#181818] dark:text-gray-300 dark:hover:bg-[#252525]"
             >
               Next →
             </button>
