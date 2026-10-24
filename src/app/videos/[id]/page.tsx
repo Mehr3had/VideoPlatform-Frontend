@@ -1,531 +1,80 @@
 "use client";
 
-import { useEffect, useState, useRef, type ReactNode, } from "react";
-import { useParams } from "next/navigation";
+import { useState, useRef } from "react";
+import { useVideoDetail } from "@/hooks/useVideoDetail";
+import CommentItem from "@/components/comments/CommentItem";
 import Navbar from "@/components/Navbar";
-import { API, BACKEND_URL } from "@/lib/api";
-
-interface Comment {
-    id: number;
-    user_id: number;
-    username: string;
-    profile_image: string | null;
-    text: string;
-    is_removed: boolean;
-    parent_comment_id: number | null;
-    created_at: string;
-    likes_count: number;
-    dislikes_count: number;
-    is_liked: boolean;
-    is_disliked: boolean;
-}
+import { useLanguage } from "@/context/LanguageContext";
+import { translations } from "@/i18n/translations";
 
 export default function VideoDetailPage() {
+    const { language, isPersian } = useLanguage();
+    const t = translations[language].videoDetail;
 
-  const params = useParams();
-  const videoId = params.id;
-  const [video, setVideo] = useState<any>(null);
-  const [channel, setChannel] = useState<any>(null);
-  const [subscribing, setSubscribing] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [dislikesCount, setDislikesCount] = useState(0);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const commentFormRef = useRef<HTMLFormElement>(null);
-  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
-  const [editingCommentText, setEditingCommentText] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const [reportingCommentId, setReportingCommentId] = useState<number | null>(null);
-  const [reportReason, setReportReason] = useState("spam");
-  const [reportDetails, setReportDetails] = useState("");
-  const [submittingReport, setSubmittingReport] = useState(false);
+    const {
+        videoId,
+        video,
+        channel,
+        currentUserId,
+        likesCount,
+        dislikesCount,
+        comments,
+        commentText,
+        setCommentText,
+        submittingComment,
+        replyingTo,
+        setReplyingTo,
+        handleCommentSubmit,
+        loading,
+        error,
+        handleReaction,
+        handleSubscribe,
+        subscribing,
+        handleCommentReaction,
+        handleEditComment,
+        handleDeleteComment,
+        submittingReport,
+        handleReportComment,
+    } = useVideoDetail();
 
+    const commentFormRef = useRef<HTMLFormElement>(null);
+    const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [editingCommentText, setEditingCommentText] = useState("");
+    const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const [reportingCommentId, setReportingCommentId] = useState<number | null>(null);
+    const [reportReason, setReportReason] = useState("spam");
+    const [reportDetails, setReportDetails] = useState("");
 
-    useEffect(() => {
-
-        const getVideo = async () => {
-            const response = await fetch(
-                `${API}/videos/${videoId}/`
-            );
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setVideo(data);
-
-                const token = localStorage.getItem("accessToken");
-
-                if (token) {
-                    try {
-                        const userResponse = await fetch(
-                            `${BACKEND_URL}/videos/api/me/`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            }
-                        );
-
-                        if (userResponse.ok) {
-                            const userData = await userResponse.json();
-                            setCurrentUserId(userData.id);
-                        } else {
-                            setCurrentUserId(null);
-                        }
-                    } catch (error) {
-                        console.error("Failed to get current user:", error);
-                        setCurrentUserId(null);
-                    }
-                } else {
-                    setCurrentUserId(null);
-                }
-
-                // Get channel profile with the current user's token
-                const channelResponse = await fetch(
-                    `${API}/users/${data.user_id}/`,
-                    {
-                        headers: token
-                            ? {
-                                Authorization: `Bearer ${token}`,
-                              }
-                            : {},
-                    }
-                );
-
-                if (channelResponse.ok) {
-                    const channelData = await channelResponse.json();
-
-                    console.log("Video owner ID:", data.user_id);
-                    console.log("Channel data:", channelData);
-
-                    setChannel(channelData);
-                }
-
-                setLikesCount(data.likes_count);
-                setDislikesCount(data.dislikes_count);
-
-                // Register video view
-                await fetch(
-                    `${API}/videos/${videoId}/view/`,
-                    {
-                        method: "POST",
-
-                        headers: token
-                        ?{
-                            Authorization: `Bearer ${token}`,
-                        }
-                        : {},
-                    }
-                );
-
-                // Get comments
-                const commentsResponse = await fetch(
-                    `${BACKEND_URL}/videos/${videoId}/comments/`
-                );
-
-                const commentsData = await commentsResponse.json();
-
-                if (commentsResponse.ok) {
-                    setComments(commentsData);
-                }
-            }
-        };
-
-        getVideo();
-
-    }, [videoId]);
-
-    if (!video) {
+    if (loading) {
         return (
-            <main className="flex min-h-screen items-center justify-center">
-                <p>Loading...</p>
+            <main
+                dir={isPersian ? "rtl" : "ltr"}
+                className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]"
+            >
+                <Navbar />
+                <div className="mx-auto max-w-5xl px-8 py-10 text-gray-700 dark:text-gray-300">
+                    {t.loading}
+                </div>
             </main>
         );
     }
 
-    const handleReaction = async (reaction: string) => {
-
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        const response = await fetch(
-            `${BACKEND_URL}/videos/${videoId}/react/`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-
-                body: JSON.stringify({
-                    reaction: reaction,
-                }),
-            }
+    if (error || !video) {
+        return (
+            <main
+                dir={isPersian ? "rtl" : "ltr"}
+                className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]"
+            >
+                <Navbar />
+                <div className="mx-auto max-w-5xl px-8 py-10 text-gray-700 dark:text-gray-300">
+                    {error === "loadFailed"
+                        ? t.loadFailed
+                        : error ?? t.videoNotFound}
+                </div>
+            </main>
         );
-
-        const data = await response.json();
-
-        if(response.ok) {
-
-            setLikesCount(data.likes_count);
-            setDislikesCount(data.dislikes_count);
-
-            console.log(data);
-        }
-
-        else {
-            console.log("Reaction failed:", data);
-        }
     }
-
-    const handleSubscribe = async () => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        if (!channel || subscribing) return;
-
-        try {
-            setSubscribing(true);
-
-            const response = await fetch(
-                `${API}/users/${video.user_id}/subscribe/`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            const data = await response.json();
-
-            console.log("Subscribe response:", data);
-
-            if (!response.ok) {
-                alert(data.error || "Could not update subscription.");
-                return;
-            }
-            setChannel((current: any) => {
-                if (!current) return current;
-
-                return {
-                    ...current,
-                    is_subscribed: data.subscribed,
-                    subscribers_count: data.subscribers_count,
-                };
-            });
-        } catch (error) {
-            console.error("Subscribe error:", error);
-            alert("Something went wrong. Please try again.");
-        } finally {
-            setSubscribing(false);
-        }
-    };
-
-    const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        const token = localStorage.getItem("accessToken");
-
-        if(!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        const text = commentText.trim();
-
-        if (!text || submittingComment) {
-            return;
-        }
-
-        if (text.length > 1000) {
-            alert("Comment must be 1000 characters or less.");
-            return;
-        }
-
-        try {
-            setSubmittingComment(true);
-
-            const response = await fetch(
-                `${BACKEND_URL}/videos/${videoId}/comments/`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        text,
-                        ...(replyingTo !== null && {
-                            parent_comment_id: replyingTo,
-                        }),
-                     }),
-                }
-            );
-
-            const data = await response.json();
-
-            if(!response.ok) {
-
-                alert(data.error || "Comment failed.");
-                return;
-            }
-
-            setComments((previouscomments) => [
-                data.comment,
-                ...previouscomments,
-            ]);
-
-            setCommentText("");
-            setReplyingTo(null);
-        } catch (error) {
-
-            console.error("Comment error:", error);
-            alert("Something went wrong. Please try again.");
-        } finally {
-
-            setSubmittingComment(false);
-        }
-    };
-
-    const handleCommentReaction = async (
-        commentId: number,
-        reaction: "like" | "dislike"
-    ) => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        const endpoint =
-            reaction === "like" ? "like" : "dislike";
-
-        try {
-            const response = await fetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/${endpoint}/`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(data.error || "Failed to update reaction.");
-                return;
-            }
-
-            setComments((previousComments) =>
-                previousComments.map((comment) =>
-                    comment.id === commentId
-                        ? {
-                            ...comment,
-                            likes_count: data.likes_count,
-                            dislikes_count: data.dislikes_count,
-                            is_liked: data.liked,
-                            is_disliked: data.disliked,
-                        }
-                        : comment
-                )
-            );
-        } catch (error) {
-            console.error("Comment reaction error:", error);
-            alert("Something went wrong. Please try again.");
-        }
-    };
-
-    const handleEditComment = async (commentId: number) => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        const text = editingCommentText.trim();
-
-        if (!text || text.length > 1000) {
-            alert("Comment must contain between 1 and 1000 characters.");
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/edit/`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ text }),
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(data.error || "Failed to edit comment.");
-                return;
-            }
-
-            setComments((previousComments) =>
-                previousComments.map((comment) =>
-                    comment.id === commentId
-                        ? { ...comment, text: data.comment.text }
-                        : comment
-                )
-            );
-
-            setEditingCommentId(null);
-            setEditingCommentText("");
-        } catch (error) {
-            console.error("Edit comment error:", error);
-            alert("Something went wrong. Please try again.");
-        }
-    };
-
-    const handleDeleteComment = async (commentId: number) => {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this comment?"
-        );
-
-        if (!confirmed) return;
-
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/delete/`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(data.error || "Failed to delete comment.");
-                return;
-            }
-
-            // Also remove replies belonging to the deleted comment.
-            const deletedIds = new Set<number>([commentId]);
-
-            let changed = true;
-
-            while (changed) {
-                changed = false;
-
-                for (const comment of comments) {
-                    if (
-                        comment.parent_comment_id !== null &&
-                        deletedIds.has(comment.parent_comment_id) &&
-                        !deletedIds.has(comment.id)
-                    ) {
-                        deletedIds.add(comment.id);
-                        changed = true;
-                    }
-                }
-            }
-
-            setComments((previousComments) =>
-                previousComments.filter(
-                    (comment) => !deletedIds.has(comment.id)
-                )
-            );
-
-            if (deletedIds.has(editingCommentId ?? -1)) {
-                setEditingCommentId(null);
-                setEditingCommentText("");
-            }
-        } catch (error) {
-            console.error("Delete comment error:", error);
-            alert("Something went wrong. Please try again.");
-        }
-    };
-
-    const handleReportComment = async (commentId: number) => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            alert("Please login first.");
-            return;
-        }
-
-        if (reportDetails.length > 500) {
-            alert("Details must be 500 characters or less.");
-            return;
-        }
-
-        try {
-            setSubmittingReport(true);
-
-            const response = await fetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/report/`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        reason: reportReason,
-                        details: reportDetails.trim(),
-                    }),
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (response.status === 409) {
-                    alert("You have already reported this comment.");
-                } else {
-                    alert(data.error || "Failed to submit report.");
-                }
-                return;
-            }
-
-            alert("Thank you. Your report has been submitted.");
-
-            setReportingCommentId(null);
-            setReportReason("spam");
-            setReportDetails("");
-            setEditingCommentId(null);
-        } catch (error) {
-            console.error("Report comment error:", error);
-            alert("Something went wrong. Please try again.");
-        } finally {
-            setSubmittingReport(false);
-        }
-    };
 
     const handleReplyClick = (commentId: number) => {
         setReplyingTo(commentId);
@@ -540,331 +89,6 @@ export default function VideoDetailPage() {
                 preventScroll: true,
             });
         });
-    };
-
-    const renderComment = (
-        comment: Comment,
-        depth = 0
-    ): ReactNode => {
-        const replies = comments.filter(
-            (item) => item.parent_comment_id === comment.id
-        );
-
-        return (
-            <div
-                key={comment.id}
-                className={
-                    depth > 0
-                        ? "ml-5 border-l-2 border-gray-200 pl-3 dark:border-[#303030]"
-                        : ""
-                }
-            >
-                <div className="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 dark:border-[#303030] dark:bg-[#181818] dark:hover:border-[#454545]">
-                    <div className="flex items-start gap-3">
-                        <a
-                            href={`/profile/${comment.user_id}`}
-                            className="shrink-0"
-                            aria-label={`View ${comment.username}'s profile`}
-                        >
-                            {comment.profile_image ? (
-                                <img
-                                    src={comment.profile_image}
-                                    alt={comment.username}
-                                    className="h-10 w-10 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-700 dark:bg-[#303030] dark:text-gray-200">
-                                    {(comment.username || "?")
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                </div>
-                            )}
-                        </a>
-
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <a
-                                        href={`/profile/${comment.user_id}`}
-                                        className="text-sm font-semibold text-gray-900 hover:text-red-700 dark:text-gray-100 dark:hover:text-red-400"
-                                    >
-                                        {comment.username}
-                                    </a>
-
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        {comment.created_at
-                                            ? getRelativeTime(comment.created_at)
-                                            : ""}
-                                    </span>
-                                </div>
-
-                                {currentUserId !== null && !comment.is_removed && (
-                                    <div className="relative shrink-0">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setEditingCommentId(
-                                                    editingCommentId === comment.id
-                                                        ? null
-                                                        : comment.id
-                                                )
-                                            }
-                                            aria-label="Comment options"
-                                            className="rounded-full px-2 py-1 text-lg leading-none text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#303030]"
-                                        >
-                                            ⋯
-                                        </button>
-
-                                        {editingCommentId === comment.id && (
-                                            <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-[#303030] dark:bg-[#202020]">
-
-                                                {currentUserId === comment.user_id && (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setEditingCommentText(comment.text);
-                                                                setEditingCommentId(comment.id);
-                                                            }}
-                                                            className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
-                                                        >
-                                                            Edit Comment
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteComment(comment.id)}
-                                                            className="w-full rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
-                                                        >
-                                                            Delete Comment
-                                                        </button>
-                                                    </>
-                                                )}
-
-                                                {currentUserId !== comment.user_id && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setReportingCommentId(comment.id);
-                                                            setReportReason("spam");
-                                                            setReportDetails("");
-                                                            setEditingCommentId(null);
-                                                        }}
-                                                        className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
-                                                    >
-                                                        🚩 Report comment
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {!comment.is_removed &&
-                            editingCommentId === comment.id &&
-                            editingCommentText !== "" ? (
-                                <div className="mt-3 space-y-2">
-
-                                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                                        {["😀", "😂", "😍", "❤️", "🔥", "👍", "😎", "😭", "🎮", "👏", "💩"].map(
-                                            (emoji) => (
-                                                <button
-                                                    key={emoji}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        insertEmoji(
-                                                            emoji,
-                                                            editingTextareaRef.current,
-                                                            editingCommentText,
-                                                            setEditingCommentText
-                                                        )
-                                                    }
-                                                    aria-label={`Insert ${emoji} emoji`}
-                                                    className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-lg transition hover:scale-110 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
-                                                >
-                                                    {emoji}
-                                                </button>
-                                            )
-                                        )}
-                                    </div>
-
-                                    <textarea
-                                        ref={editingTextareaRef}
-                                        value={editingCommentText}
-                                        onChange={(event) =>
-                                            setEditingCommentText(event.target.value)
-                                        }
-                                        maxLength={1000}
-                                        rows={3}
-                                        className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
-                                    />
-
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            {editingCommentText.length}/1000
-                                        </span>
-
-                                        <div className="flex gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setEditingCommentId(null);
-                                                    setEditingCommentText("");
-                                                }}
-                                                className="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
-                                            >
-                                                Cancel
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEditComment(comment.id)}
-                                                disabled={
-                                                    !editingCommentText.trim() ||
-                                                    editingCommentText.length > 1000
-                                                }
-                                                className="rounded-lg bg-red-700 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                Save
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : comment.is_removed ? (
-                                <p className="mt-2 text-sm italic text-gray-500 dark:text-gray-400">
-                                    This comment was removed for violating community guidelines.
-                                </p>
-                            ) : (
-                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300">
-                                    {comment.text}
-                                </p>
-                            )}
-
-                            {!comment.is_removed && (
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleCommentReaction(comment.id, "like")
-                                        }
-                                        aria-label="Like comment"
-                                        aria-pressed={comment.is_liked}
-                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${
-                                            comment.is_liked
-                                                ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
-                                                : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#303030]"
-                                            }`}
-                                    >
-                                        <span>👍</span>
-                                        <span>{comment.likes_count}</span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleCommentReaction(comment.id, "dislike")
-                                        }
-                                        aria-label="Dislike comment"
-                                        aria-pressed={comment.is_disliked}
-                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${
-                                            comment.is_disliked
-                                                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-                                                : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#303030]"
-                                        }`}
-                                    >
-                                        <span>👎</span>
-                                        <span>{comment.dislikes_count}</span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => handleReplyClick(comment.id)}
-                                        className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-red-700 dark:text-gray-300 dark:hover:bg-[#303030] dark:hover:text-red-400"
-                                    >
-                                        Reply
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {!comment.is_removed && reportingCommentId === comment.id && (
-                    <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818]">
-                        <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">
-                            Report comment
-                        </h3>
-
-                        <label
-                            htmlFor={`report-reason-${comment.id}`}
-                            className="mb-1 block text-sm text-gray-700 dark:text-gray-300"
-                        >
-                            Reason
-                        </label>
-
-                        <select
-                            id={`report-reason-${comment.id}`}
-                            value={reportReason}
-                            onChange={(event) => setReportReason(event.target.value)}
-                            className="mb-3 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
-                        >
-                            <option value="spam">Spam</option>
-                            <option value="harassment">Harassment or bullying</option>
-                            <option value="hate_speech">Hate speech</option>
-                            <option value="inappropriate">Inappropriate content</option>
-                            <option value="misinformation">Misleading information</option>
-                            <option value="other">Other</option>
-                        </select>
-
-                        <label
-                            htmlFor={`report-details-${comment.id}`}
-                            className="mb-1 block text-sm text-gray-700 dark:text-gray-300"
-                        >
-                            Additional details (optional)
-                        </label>
-
-                        <textarea
-                            id={`report-details-${comment.id}`}
-                            value={reportDetails}
-                            onChange={(event) =>
-                                setReportDetails(event.target.value.slice(0, 500))
-                            }
-                            maxLength={500}
-                            rows={3}
-                            placeholder="Tell us more..."
-                            className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none focus:border-red-600 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
-                        />
-
-                        <div className="mt-3 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setReportingCommentId(null)}
-                                disabled={submittingReport}
-                                className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
-                            >
-                                Cancel
-                           </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleReportComment(comment.id)}
-                                disabled={submittingReport}
-                                className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
-                            >
-                                {submittingReport ? "Submitting..." : "Submit report"}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {replies.length > 0 && (
-                    <div className="mt-3 space-y-3">
-                        {replies.map((reply) => renderComment(reply, depth + 1))}
-                    </div>
-                )}
-            </div>
-        );
     };
 
     const insertEmoji = (
@@ -903,29 +127,31 @@ export default function VideoDetailPage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
-
+        <main
+            dir={isPersian ? "rtl" : "ltr"}
+            className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]"
+        >
             <Navbar />
 
             <section className="mx-auto max-w-5xl px-8 py-10">
-
                 <video
                     controls
-                    poster={video.thumbnail}
+                    poster={video.thumbnail ?? undefined}
                     className="w-full rounded-xl"
                 >
                     <source src={video.video_file} />
                 </video>
 
-                <h1 className="mt-6 text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <h1 className="mt-6 text-start text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {video.title}
                 </h1>
 
                 <div className="mt-5 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818] sm:flex-row sm:items-center sm:justify-between">
-
                     <div className="flex items-center gap-4">
-
-                        <a href={`/profile/${video.user_id}`} className="shrink-0">
+                        <a
+                            href={`/profile/${video.user_id}`}
+                            className="shrink-0"
+                        >
                             {channel?.profile_image ? (
                                 <img
                                     src={channel.profile_image}
@@ -933,16 +159,15 @@ export default function VideoDetailPage() {
                                     className="h-14 w-14 rounded-full object-cover"
                                 />
                             ) : (
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-200 text-xl font-bold text-gray-600 dark:bg-[#303030] dark:text-gray-300">
-                                        {(channel?.username || video.username || "?")
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                    </div>
-                                )}
+                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-200 text-xl font-bold text-gray-600 dark:bg-[#303030] dark:text-gray-300">
+                                    {(channel?.username || video.username || "?")
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                </div>
+                            )}
                         </a>
 
                         <div className="min-w-0">
-
                             <a
                                 href={`/profile/${video.user_id}`}
                                 className="font-semibold text-gray-900 hover:text-red-700 dark:text-gray-100 dark:hover:text-red-400"
@@ -951,13 +176,12 @@ export default function VideoDetailPage() {
                             </a>
 
                             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                {channel?.subscribers_count ?? 0} subscribers
+                                {channel?.subscribers_count ?? 0}{" "}
+                                {t.subscribers}
                                 {" • "}
-                                {video.views_count} views
+                                {video.views_count} {t.views}
                             </p>
-
                         </div>
-
                     </div>
 
                     {channel && !channel.is_owner && (
@@ -971,33 +195,36 @@ export default function VideoDetailPage() {
                             }`}
                         >
                             {subscribing
-                                ? "Updating..."
+                                ? t.updating
                                 : channel.is_subscribed
-                                    ? "Unsubscribe"
-                                    : "Subscribe"}
+                                  ? t.unsubscribe
+                                  : t.subscribe}
                         </button>
                     )}
-
                 </div>
 
-                <p className="mt-6 text-gray-700 dark:text-gray-300">
-                    {video.description}
-                </p>
+                {video.description && (
+                    <p
+                        dir="auto"
+                        className="mt-6 whitespace-pre-wrap text-start text-gray-700 dark:text-gray-300"
+                    >
+                        {video.description}
+                    </p>
+                )}
 
-                <div className="mt-6 flex gap-3">
-
+                <div className="mt-6 flex flex-wrap gap-3">
                     <button
                         onClick={() => handleReaction("like")}
                         className="rounded-lg bg-red-700 px-5 py-2 font-medium text-white hover:bg-red-800"
                     >
-                        👍 Like {likesCount}
+                        👍 {t.like} {likesCount}
                     </button>
 
                     <button
                         onClick={() => handleReaction("dislike")}
                         className="rounded-lg border border-gray-300 bg-white px-5 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                     >
-                        👎 Dislike {dislikesCount}
+                        👎 {t.dislike} {dislikesCount}
                     </button>
 
                     <button
@@ -1005,22 +232,18 @@ export default function VideoDetailPage() {
                             navigator.clipboard.writeText(
                                 window.location.href
                             );
-
-                            alert("Link copied!");
+                            alert(t.linkCopied);
                         }}
                         className="rounded-lg border border-gray-300 bg-white px-5 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                     >
-                        🔗 Share
+                        🔗 {t.share}
                     </button>
-
                 </div>
-
             </section>
 
             <section className="mx-auto mt-10 max-w-5xl px-8 pb-10">
-
-                <h2 className="mb-5 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    Comments
+                <h2 className="mb-5 text-start text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {t.comments}
                 </h2>
 
                 <form
@@ -1030,11 +253,12 @@ export default function VideoDetailPage() {
                 >
                     {replyingTo !== null && (
                         <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-950/30">
-                            <div className="text-sm text-red-700 dark:text-red-300">
-                                Replying to{" "}
+                            <div className="text-start text-sm text-red-700 dark:text-red-300">
+                                {t.replyingTo}{" "}
                                 <span className="font-semibold">
-                                    {comments.find((comment) => comment.id === replyingTo)?.username
-                                        ?? "comment"}
+                                    {comments.find(
+                                        (comment) => comment.id === replyingTo
+                                    )?.username ?? t.comment}
                                 </span>
                             </div>
 
@@ -1043,50 +267,62 @@ export default function VideoDetailPage() {
                                 onClick={() => setReplyingTo(null)}
                                 className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 transition hover:bg-red-100 dark:text-gray-300 dark:hover:bg-red-900/40"
                             >
-                                Cancel
+                                {t.cancel}
                             </button>
                         </div>
                     )}
 
                     <label
                         htmlFor="comment"
-                        className="mb-3 block text-sm font-semibold text-gray-900 dark:text-gray-100"
+                        className="mb-3 block text-start text-sm font-semibold text-gray-900 dark:text-gray-100"
                     >
-                        {replyingTo !== null ? "Write a reply" : "Leave a comment"}
+                        {replyingTo !== null ? t.writeReply : t.leaveComment}
                     </label>
+
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                        {["😀", "😂", "😍", "❤️", "🔥", "👍", "😎", "😭", "🎮", "👏", "💩"].map(
-                            (emoji) => (
-                                <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() =>
-                                        insertEmoji(
-                                            emoji,
-                                            commentTextareaRef.current,
-                                            commentText,
-                                            setCommentText
-                                        )
-                                    }
-                                    aria-label={`Insert ${emoji} emoji`}
-                                    className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-lg transition hover:scale-110 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
-                                >
-                                    {emoji}
-                                </button>
-                            )
-                        )}
+                        {[
+                            "😀",
+                            "😂",
+                            "😍",
+                            "❤️",
+                            "🔥",
+                            "👍",
+                            "😎",
+                            "😭",
+                            "🎮",
+                            "👏",
+                            "💩",
+                        ].map((emoji) => (
+                            <button
+                                key={emoji}
+                                type="button"
+                                onClick={() =>
+                                    insertEmoji(
+                                        emoji,
+                                        commentTextareaRef.current,
+                                        commentText,
+                                        setCommentText
+                                    )
+                                }
+                                aria-label={`${t.insertEmoji} ${emoji}`}
+                                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-lg transition hover:scale-110 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                            >
+                                {emoji}
+                            </button>
+                        ))}
                     </div>
 
                     <textarea
                         ref={commentTextareaRef}
                         id="comment"
+                        dir="auto"
                         value={commentText}
-                        onChange={(e) =>
-                            setCommentText(e.target.value.slice(0, 1000))
+                        onChange={(event) =>
+                            setCommentText(event.target.value.slice(0, 1000))
                         }
-                        placeholder="Share your thoughts..."
+                        placeholder={t.commentPlaceholder}
                         maxLength={1000}
-                        className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-1 focus:ring-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 text-start text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-1 focus:ring-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                         rows={3}
                     />
 
@@ -1098,12 +334,14 @@ export default function VideoDetailPage() {
                                     : "text-gray-500 dark:text-gray-400"
                             }`}
                         >
-                            {commentText.length}/1000 characters
+                            {commentText.length}/1000 {t.characters}
                         </span>
 
                         <button
                             type="submit"
-                            disabled={!commentText.trim() || submittingComment}
+                            disabled={
+                                !commentText.trim() || submittingComment
+                            }
                             className="inline-flex items-center justify-center gap-2 rounded-full bg-red-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {submittingComment ? (
@@ -1127,27 +365,86 @@ export default function VideoDetailPage() {
                                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                                         />
                                     </svg>
-                                    Posting...
+                                    {t.posting}
                                 </>
+                            ) : replyingTo !== null ? (
+                                t.postReply
                             ) : (
-                                replyingTo !== null ? "Post Reply" : "Add Comment"
+                                t.addComment
                             )}
                         </button>
                     </div>
                 </form>
 
                 <div className="space-y-4">
-
                     {comments
-                        .filter((comment) => comment.parent_comment_id === null)
-                        .map((comment) => renderComment(comment))}
+                        .filter(
+                            (comment) => comment.parent_comment_id === null
+                        )
+                        .map((comment) => (
+                            <CommentItem
+                                key={comment.id}
+                                comment={comment}
+                                comments={comments}
+                                currentUserId={currentUserId}
+                                getRelativeTime={(dateString) =>
+                                    getRelativeTime(dateString, language)
+                                }
+                                depth={0}
+                                editingCommentId={editingCommentId}
+                                setEditingCommentId={setEditingCommentId}
+                                editingCommentText={editingCommentText}
+                                setEditingCommentText={setEditingCommentText}
+                                editingTextareaRef={editingTextareaRef}
+                                reportingCommentId={reportingCommentId}
+                                setReportingCommentId={setReportingCommentId}
+                                reportReason={reportReason}
+                                setReportReason={setReportReason}
+                                reportDetails={reportDetails}
+                                setReportDetails={setReportDetails}
+                                submittingReport={submittingReport}
+                                onDeleteComment={(commentId) =>
+                                    handleDeleteComment(
+                                        commentId,
+                                        editingCommentId,
+                                        setEditingCommentId,
+                                        setEditingCommentText
+                                    )
+                                }
+                                onEditComment={(commentId, text) =>
+                                    handleEditComment(
+                                        commentId,
+                                        text,
+                                        setEditingCommentId,
+                                        setEditingCommentText
+                                    )
+                                }
+                                onReportComment={(commentId, reason, details) =>
+                                    handleReportComment(
+                                        commentId,
+                                        reason,
+                                        details,
+                                        setReportingCommentId,
+                                        setReportReason,
+                                        setReportDetails,
+                                        setEditingCommentId
+                                    )
+                                }
+                                onCommentReaction={handleCommentReaction}
+                                onReplyClick={handleReplyClick}
+                                onInsertEmoji={insertEmoji}
+                            />
+                        ))}
                 </div>
             </section>
         </main>
     );
 }
 
-function getRelativeTime(dateString: string) {
+function getRelativeTime(
+    dateString: string,
+    language: "fa" | "en"
+): string {
     const date = new Date(dateString);
     const now = new Date();
 
@@ -1159,29 +456,58 @@ function getRelativeTime(dateString: string) {
         return "";
     }
 
-    if (seconds < 10) return "Just now";
-    if (seconds < 60) return `${seconds} seconds ago`;
+    const isPersian = language === "fa";
+    const t = translations[language].videoDetail;
+
+    if (seconds < 10) return t.justNow;
+
+    if (seconds < 60) {
+        return isPersian
+            ? `${seconds} ${t.secondsAgo}`
+            : `${seconds} ${t.secondsAgo}`;
+    }
 
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) {
-        return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
+        const label =
+            minutes === 1 ? t.minuteAgo : t.minutesAgo;
+
+        return isPersian
+            ? `${minutes} ${label}`
+            : `${minutes} ${label}`;
     }
 
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
-        return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+        const label = hours === 1 ? t.hourAgo : t.hoursAgo;
+
+        return isPersian
+            ? `${hours} ${label}`
+            : `${hours} ${label}`;
     }
 
     const days = Math.floor(hours / 24);
     if (days < 30) {
-        return `${days} day${days !== 1 ? "s" : ""} ago`;
+        const label = days === 1 ? t.dayAgo : t.daysAgo;
+
+        return isPersian
+            ? `${days} ${label}`
+            : `${days} ${label}`;
     }
 
     const months = Math.floor(days / 30);
     if (months < 12) {
-        return `${months} month${months !== 1 ? "s" : ""} ago`;
+        const label = months === 1 ? t.monthAgo : t.monthsAgo;
+
+        return isPersian
+            ? `${months} ${label}`
+            : `${months} ${label}`;
     }
 
     const years = Math.floor(days / 365);
-    return `${years} year${years !== 1 ? "s" : ""} ago`;
+    const label = years === 1 ? t.yearAgo : t.yearsAgo;
+
+    return isPersian
+        ? `${years} ${label}`
+        : `${years} ${label}`;
 }
