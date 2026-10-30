@@ -13,10 +13,8 @@ interface ProfileData {
 
 export default function useEditProfile() {
     const router = useRouter();
-
     const { language } = useLanguage();
     const t = translations[language].editProfile;
-
     const [bio, setBio] = useState("");
     const [profileImage, setProfileImage] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
@@ -109,8 +107,13 @@ export default function useEditProfile() {
                 return;
             }
 
-            window.alert(t.updateSuccess);
-            router.push(`/profile/${data.id ?? ""}`);
+            const params = new URLSearchParams();
+
+            if (data.id != null) {
+                params.set("id", String(data.id));
+            }
+
+            router.push(`/profile/edit/success?${params.toString()}`);
         } catch (err) {
             console.error("Profile update error:", err);
             setError(t.updateError);

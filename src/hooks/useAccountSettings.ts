@@ -159,10 +159,6 @@ export default function useAccountSettings() {
 
         if (!requireLogin()) return;
 
-        const confirmed = window.confirm(t.confirmDelete);
-
-        if (!confirmed) return;
-
         setDeleteLoading(true);
         setDeleteMessage("");
         setDeleteError(false);

@@ -24,7 +24,7 @@ export default function RegisterForm() {
     const t = translations[language].register;
 
     const inputClass =
-        "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500";
+        "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500";
 
     const labelClass =
         "mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300";
@@ -135,7 +135,7 @@ export default function RegisterForm() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-lg bg-red-700 px-5 py-3 font-medium text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="accent-button w-full rounded-lg px-5 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {loading ? t.submitting : t.submit}
                 </button>
@@ -144,7 +144,7 @@ export default function RegisterForm() {
             <div className="mt-4 text-center">
                 <Link
                     href="/"
-                    className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-base font-medium text-white transition hover:bg-blue-700"
+                    className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-gray-100 px-5 py-3 text-base font-medium text-gray-700 transition hover:bg-gray-200 dark:border-[#404040] dark:bg-[#252525] dark:text-gray-200 dark:hover:bg-[#303030]"
                 >
                     {t.backHome}
                 </Link>
@@ -154,7 +154,7 @@ export default function RegisterForm() {
                 {t.alreadyHaveAccount}{" "}
                 <Link
                     href="/login"
-                    className="font-medium text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    className="font-medium text-[var(--accent)] hover:opacity-80"
                 >
                     {t.login}
                 </Link>

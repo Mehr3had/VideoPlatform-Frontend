@@ -38,7 +38,7 @@ export default function DashboardVideoCard({
             <div className="min-w-0 flex-1">
                 <Link
                     href={`/videos/${video.id}`}
-                    className="break-words text-base font-semibold text-gray-900 hover:text-red-700 sm:text-lg dark:text-gray-100 dark:hover:text-red-400"
+                    className="break-words text-base font-semibold text-gray-900 transition-colors hover:text-[var(--accent)] sm:text-lg dark:text-gray-100"
                 >
                     {video.title}
                 </Link>
@@ -72,7 +72,7 @@ export default function DashboardVideoCard({
             <div className="flex w-full gap-3 sm:w-auto sm:shrink-0">
                 <Link
                     href={`/dashboard/edit/${video.id}`}
-                    className="flex flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex-none sm:px-4 dark:border-[#404040] dark:text-gray-300 dark:hover:bg-[#252525]"
+                    className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)]"
                 >
                     {t.edit}
                 </Link>

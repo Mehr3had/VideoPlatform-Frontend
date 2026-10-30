@@ -158,8 +158,12 @@ export default function useEditVideo() {
                 return;
             }
 
-            window.alert(t.updateSuccess);
-            router.push("/dashboard");
+            const params = new URLSearchParams({
+                id: videoId,
+                title,
+            });
+
+            router.push(`/dashboard/edit/success?${params.toString()}`);
         } catch (err) {
             console.error("Update video error:", err);
             setError(t.updateError);

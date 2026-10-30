@@ -23,6 +23,7 @@ interface Video {
     thumbnail?: string | null;
     username: string;
     views_count: number;
+    duration: number;
     category_name?: string | null;
 }
 

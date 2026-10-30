@@ -57,7 +57,7 @@ export default function EditProfileForm({
                         onChange={(event) => setBio(event.target.value)}
                         rows={5}
                         maxLength={500}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-[var(--accent)]"
                         placeholder={t.bioPlaceholder}
                     />
 
@@ -99,7 +99,7 @@ export default function EditProfileForm({
                     <button
                         type="submit"
                         disabled={saving}
-                        className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#303030] dark:hover:bg-[#404040]"
+                        className="accent-button rounded-lg px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {saving ? t.saving : t.saveChanges}
                     </button>

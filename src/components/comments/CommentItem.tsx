@@ -41,6 +41,7 @@ interface CommentItemProps {
         value: string,
         setValue: (value: string) => void
     ) => void;
+    reactingCommentIds: number[];
 }
 
 export default function CommentItem({
@@ -67,6 +68,7 @@ export default function CommentItem({
     onCommentReaction,
     onReplyClick,
     onInsertEmoji,
+    reactingCommentIds,
 }: CommentItemProps) {
     const { language, isPersian } = useLanguage();
     const t = translations[language].videoDetail;
@@ -299,7 +301,12 @@ export default function CommentItem({
                                     }
                                     aria-pressed={comment.is_liked}
                                     aria-label={`${t.like} ${comment.likes_count}`}
-                                    className="rounded-lg px-2 py-1 text-sm text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                                    disabled={reactingCommentIds.includes(comment.id)}
+                                    className={`rounded-lg px-2 py-1 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        comment.is_liked
+                                            ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                                    }`}
                                 >
                                     👍 {comment.likes_count}
                                 </button>
@@ -311,7 +318,12 @@ export default function CommentItem({
                                     }
                                     aria-pressed={comment.is_disliked}
                                     aria-label={`${t.dislike} ${comment.dislikes_count}`}
-                                    className="rounded-lg px-2 py-1 text-sm text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                                    disabled={reactingCommentIds.includes(comment.id)}
+                                    className={`rounded-lg px-2 py-1 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        comment.is_disliked
+                                            ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                                    }`}
                                 >
                                     👎 {comment.dislikes_count}
                                 </button>
@@ -423,6 +435,7 @@ export default function CommentItem({
                             key={reply.id}
                             comment={reply}
                             comments={comments}
+                            reactingCommentIds={reactingCommentIds}
                             currentUserId={currentUserId}
                             getRelativeTime={getRelativeTime}
                             depth={depth + 1}

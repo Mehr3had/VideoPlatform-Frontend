@@ -47,14 +47,14 @@ export default function UsernameForm({
                         onChange={(event) => setUsername(event.target.value)}
                         placeholder={t.usernamePlaceholder}
                         autoComplete="username"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={loading}
-                    className="rounded-lg bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="accent-button rounded-lg px-5 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {loading ? t.saving : t.updateUsername}
                 </button>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { API, apiFetch } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Category {
     id: number;
@@ -14,8 +15,8 @@ interface Category {
 export default function useVideoUpload() {
     const router = useRouter();
     const { language } = useLanguage();
+    const queryClient = useQueryClient();
     const t = translations[language].uploadVideo;
-
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [categoryId, setCategoryId] = useState("");
@@ -99,8 +100,20 @@ export default function useVideoUpload() {
             const data = await response.json().catch(() => ({}));
 
             if (response.ok) {
-                window.alert(t.uploadSuccess);
-                router.push("/dashboard");
+                await queryClient.invalidateQueries({
+                    queryKey: ["homeVideos"],
+                });
+
+                await queryClient.invalidateQueries({
+                    queryKey: ["trendingVideos"],
+                });
+                
+                const params = new URLSearchParams({
+                    id: String(data.id),
+                    title: data.title || title,
+                });
+
+                router.push(`/dashboard/upload/success?${params.toString()}`);
             } else {
                 setError(data.error || t.uploadFailed);
             }

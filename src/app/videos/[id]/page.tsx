@@ -6,6 +6,7 @@ import CommentItem from "@/components/comments/CommentItem";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import VideoPlayer from "@/components/videos/VideoPlayer";
 
 export default function VideoDetailPage() {
     const { language, isPersian } = useLanguage();
@@ -18,16 +19,18 @@ export default function VideoDetailPage() {
         currentUserId,
         likesCount,
         dislikesCount,
+        userReaction,
+        handleReaction,
         comments,
         commentText,
         setCommentText,
         submittingComment,
+        reactingCommentIds,
         replyingTo,
         setReplyingTo,
         handleCommentSubmit,
         loading,
         error,
-        handleReaction,
         handleSubscribe,
         subscribing,
         handleCommentReaction,
@@ -134,13 +137,13 @@ export default function VideoDetailPage() {
             <Navbar />
 
             <section className="mx-auto max-w-5xl px-8 py-10">
-                <video
-                    controls
-                    poster={video.thumbnail ?? undefined}
-                    className="w-full rounded-xl"
-                >
-                    <source src={video.video_file} />
-                </video>
+                <VideoPlayer
+                    videoId={video.id}
+                    src={video.video_file}
+                    poster={video.thumbnail}
+                    subtitles={video.subtitles}
+                    qualities={video.qualities}
+                />
 
                 <h1 className="mt-6 text-start text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {video.title}
@@ -215,14 +218,24 @@ export default function VideoDetailPage() {
                 <div className="mt-6 flex flex-wrap gap-3">
                     <button
                         onClick={() => handleReaction("like")}
-                        className="rounded-lg bg-red-700 px-5 py-2 font-medium text-white hover:bg-red-800"
+                        className={`rounded-lg px-5 py-2 font-medium transition ${
+                            userReaction === "like"
+                                ? "bg-[var(--accent)] text-white"
+                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
+                        }`}
+                        aria-pressed={userReaction === "like"}
                     >
                         👍 {t.like} {likesCount}
                     </button>
 
                     <button
                         onClick={() => handleReaction("dislike")}
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
+                        className={`rounded-lg px-5 py-2 font-medium transition ${
+                            userReaction === "dislike"
+                                ? "bg-[var(--accent)] text-white"
+                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
+                        }`}
+                        aria-pressed={userReaction === "dislike"}
                     >
                         👎 {t.dislike} {dislikesCount}
                     </button>
@@ -386,6 +399,7 @@ export default function VideoDetailPage() {
                                 key={comment.id}
                                 comment={comment}
                                 comments={comments}
+                                reactingCommentIds={reactingCommentIds}
                                 currentUserId={currentUserId}
                                 getRelativeTime={(dateString) =>
                                     getRelativeTime(dateString, language)

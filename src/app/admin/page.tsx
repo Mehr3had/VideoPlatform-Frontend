@@ -44,7 +44,7 @@ export default function AdminPage() {
 
                     <Link
                         href="/"
-                        className="inline-flex flex-row-reverse shrink-0 items-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-red-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:px-5"
+                        className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030] sm:px-5"
                     >
                         {t.backHome}
                         <span aria-hidden="true">←</span>

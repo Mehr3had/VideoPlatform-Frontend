@@ -1,29 +1,78 @@
 # VideoPlatform — Frontend
 
-A video-sharing platform frontend built with **Next.js, React, and TypeScript**, integrated with a Django REST Framework backend.
+A modern video-sharing platform frontend built with **Next.js, React, and TypeScript**, integrated with a Django REST Framework backend.
+
+VideoPlatform is a full-stack learning and portfolio project inspired by platforms such as YouTube and Aparat. It provides video discovery, playback, creator tools, user interactions, notifications, and administrative features.
 
 ## Features
 
-- **Authentication:** User registration, login, and JWT-based authentication.
-- **Account Recovery:** Forgot-password and forgot-username workflows.
-- **Video Discovery:** Browse videos, search by title or description, filter by category, and explore trending content.
-- **Video Playback:** Watch videos and interact through likes, dislikes, comments, and replies.
-- **Comment Interactions:** Like, dislike, edit, delete, and report comments, where supported.
-- **User Profiles:** View profiles, explore uploaded videos, and manage subscriptions.
-- **Creator Dashboard:** Upload videos, edit existing videos, and manage uploaded content.
-- **Notifications:** View and manage notifications, including activity from subscribed channels.
-- **Account Settings:** Update profile information and manage account preferences.
-- **Admin Panel:** Access administrative functionality for managing reported content, where authorized.
-- **Responsive Interface:** A component-based interface designed for a video-sharing experience.
+### Authentication & Account Management
+- User registration and login.
+- JWT-based authentication.
+- Forgot-password and account recovery workflows.
+- Password and username management.
+- Account deletion.
+- Profile editing and account settings.
+
+### Video Discovery & Playback
+- Browse and search videos.
+- Filter videos by category.
+- Explore trending content.
+- Custom video player with playback controls.
+- Selectable video quality options (480p, 720p, and 1080p when available).
+- Playback speed controls.
+- Subtitle support.
+- Double-tap seeking and playback controls.
+- Persistent playback progress.
+- Remaining-time and elapsed-time display.
+
+### User Interaction
+- Like and dislike videos.
+- Write comments and nested replies.
+- Like and dislike comments.
+- Edit and delete comments.
+- Report inappropriate comments.
+- Subscribe to channels and manage subscriptions.
+
+### Creator Dashboard
+- Upload videos and thumbnails.
+- Edit video information.
+- Manage uploaded videos.
+- Dedicated success pages for completed actions.
+
+### Notifications
+- Notifications for subscriptions and channel activity.
+- Video likes and comment interactions.
+- Reply and comment-like notifications.
+- Notification management and read status.
+
+### Administration
+- Admin dashboard.
+- View and manage reported comments.
+- Review, dismiss, or take action on reports.
+- Report statistics and filtering.
+
+### Interface & Architecture
+- Responsive user interface.
+- Light and dark appearance modes.
+- Appearance preferences.
+- Component-based architecture.
+- Custom React hooks for separating UI and application logic.
+- Centralized API communication.
+- State management for shared application features.
 
 ## Tech Stack
 
-- Next.js 16 (App Router)
-- React
-- TypeScript
-- Tailwind CSS
-- Django REST Framework
-- JWT Authentication
+- **Next.js 16** — App Router
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **Axios** — HTTP requests
+- **TanStack Query** — Server-state management
+- **Zustand** — Client-state management
+- **Video.js** — Video playback
+- **Django REST Framework** — Backend API
+- **JWT** — Authentication
 
 ## Related Repository
 
@@ -63,17 +112,17 @@ Create a `.env.local` file in the project root:
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 ```
 
-This variable defines the base URL of the Django backend. Update it if your backend runs at a different address.
+This variable defines the base URL of the Django backend.
 
-The frontend uses this variable to construct API endpoints and backend resource URLs.
+Update it if your backend runs at a different address.
 
-**Security note:** Variables prefixed with `NEXT_PUBLIC_` may be exposed to the browser. Never store passwords, secret keys, or other private credentials in them.
+**Security note:** Variables prefixed with `NEXT_PUBLIC_` may be exposed to the browser. Never store passwords, secret keys, or private credentials in them.
 
 ### 4. Start the backend
 
 Follow the setup instructions in the [backend repository](https://github.com/Mehr3had/VideoPlatform-Backend).
 
-Make sure the Django database migrations have been applied and the backend is running at:
+Make sure database migrations have been applied and the backend is running at:
 
 ```text
 http://127.0.0.1:8000
@@ -85,13 +134,13 @@ http://127.0.0.1:8000
 npm run dev
 ```
 
-Open the application in your browser:
+Open the application:
 
 ```text
 http://localhost:3000
 ```
 
-Make sure Django's CORS configuration allows requests from `http://localhost:3000`.
+Make sure the Django CORS configuration allows requests from `http://localhost:3000`.
 
 **Note:** The local database and uploaded media files are not included in this repository. You may need to create an account and upload sample videos to test all features.
 
@@ -116,7 +165,7 @@ src/
 ├── app/
 │   ├── admin/
 │   ├── dashboard/
-│   │   ├── edit/[id]/
+│   │   ├── edit/
 │   │   └── upload/
 │   ├── forgot-password/
 │   ├── forgot-username/
@@ -128,27 +177,50 @@ src/
 │   ├── register/
 │   ├── reset-password/
 │   ├── settings/
-│   ├── videos/[id]/
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
+│   └── videos/
+│       └── [id]/
 ├── components/
-│   └── Navbar.tsx
-└── lib/
-    └── api.ts
+│   ├── admin/
+│   ├── auth/
+│   ├── comments/
+│   ├── dashboard/
+│   ├── notifications/
+│   ├── profile/
+│   ├── providers/
+│   ├── settings/
+│   └── videos/
+├── context/
+├── hooks/
+├── i18n/
+├── lib/
+├── stores/
+└── types/
 ```
+
+### Architecture Overview
+
+- **app/** — Next.js routes and pages.
+- **components/** — Reusable UI components organized by feature.
+- **hooks/** — Custom hooks for application logic and data fetching.
+- **context/** — Shared React context.
+- **i18n/** — Translation resources.
+- **lib/** — API clients and shared utilities.
+- **stores/** — Zustand stores for shared client-side state.
+- **types/** — TypeScript interfaces and types.
 
 ## Backend Integration
 
-The frontend communicates with the Django REST API. The API base URL is configured through `NEXT_PUBLIC_API_URL` and centralized in `src/lib/api.ts`.
+The frontend communicates with the Django REST API.
+
+The API base URL is configured through `NEXT_PUBLIC_API_URL` and centralized in `src/lib/api.ts`.
 
 For local development, the frontend and backend typically run on ports `3000` and `8000`, respectively.
 
 The backend must be available for authentication, video operations, comments, subscriptions, notifications, and other API-dependent functionality.
 
-## Project Status
+---
 
-This project is a full-stack learning and portfolio project that combines a Next.js frontend with a Django REST API backend.
+This project is a full-stack learning and portfolio project combining a Next.js frontend with a Django REST API backend.
 
 The application is under active development.
 

@@ -56,7 +56,7 @@ export default function NotificationsPage() {
 
                     <Link
                         href="/"
-                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-red-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-800"
+                        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030]"
                     >
                         <span aria-hidden="true">
                             {isPersian ? "→" : "←"}
@@ -66,7 +66,7 @@ export default function NotificationsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="whitespace-nowrap rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-400">
+                    <span className="whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-4 py-2 text-sm font-semibold text-[var(--accent)]">
                         {unreadCount} {t.unread}
                     </span>
 
@@ -75,7 +75,7 @@ export default function NotificationsPage() {
                             type="button"
                             onClick={markAllAsRead}
                             disabled={updatingId !== null}
-                            className="whitespace-nowrap rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+                            className="accent-button whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50"
                         >
                             {updatingId === -1
                                 ? t.updating
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
                     <button
                         type="button"
                         onClick={loadNotifications}
-                        className="mx-2 font-semibold underline"
+                        className="mt-2 inline-block text-sm font-medium text-[var(--accent)] hover:underline"
                     >
                         {t.retry}
                     </button>

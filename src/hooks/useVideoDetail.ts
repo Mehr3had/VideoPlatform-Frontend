@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { API, BACKEND_URL, apiFetch } from "@/lib/api";
 import type { Video, Channel } from "@/types/video";
@@ -25,16 +25,17 @@ export interface VideoComment {
 export function useVideoDetail() {
     const params = useParams<{ id: string }>();
     const videoId = params.id;
-
     const { language } = useLanguage();
     const t = translations[language].videoDetail;
-
     const [subscribing, setSubscribing] = useState(false);
     const [video, setVideo] = useState<Video | null>(null);
     const [channel, setChannel] = useState<Channel | null>(null);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [likesCount, setLikesCount] = useState(0);
     const [dislikesCount, setDislikesCount] = useState(0);
+    const [userReaction, setUserReaction] = useState<
+        "like" | "dislike" | null
+    >(null);
     const [comments, setComments] = useState<VideoComment[]>([]);
     const [commentText, setCommentText] = useState("");
     const [submittingComment, setSubmittingComment] = useState(false);
@@ -42,6 +43,8 @@ export function useVideoDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [submittingReport, setSubmittingReport] = useState(false);
+    const [reactingCommentIds, setReactingCommentIds] = useState<number[]>([]);
+    const reactingCommentIdsRef = useRef(new Set<number>());
 
     useEffect(() => {
         let cancelled = false;
@@ -64,8 +67,29 @@ export function useVideoDetail() {
                 setVideo(data);
                 setLikesCount(data.likes_count);
                 setDislikesCount(data.dislikes_count);
+                setUserReaction(null);
 
                 const token = localStorage.getItem("accessToken");
+
+                if (token) {
+                    try {
+                        const reactionResponse = await apiFetch(
+                            `${BACKEND_URL}/videos/${videoId}/react/`
+                        );
+
+                        if (reactionResponse.ok) {
+                            const reactionData = await reactionResponse.json();
+
+                            if (!cancelled) {
+                                setUserReaction(reactionData.reaction);
+                                setLikesCount(reactionData.likes_count);
+                                setDislikesCount(reactionData.dislikes_count);
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Failed to get video reaction:", error);
+                    }
+                }
 
                 if (token) {
                     try {
@@ -110,9 +134,9 @@ export function useVideoDetail() {
                     method: "POST",
                 });
 
-                const commentsResponse = await fetch(
-                    `${BACKEND_URL}/videos/${videoId}/comments/`
-                );
+                const commentsResponse = token
+                    ? await apiFetch(`${BACKEND_URL}/videos/${videoId}/comments/`)
+                    : await fetch(`${BACKEND_URL}/videos/${videoId}/comments/`);
 
                 if (commentsResponse.ok) {
                     const commentsData: VideoComment[] =
@@ -142,7 +166,7 @@ export function useVideoDetail() {
         };
     }, [videoId]);
 
-    const handleReaction = async (reaction: string) => {
+    const handleReaction = async (reaction: "like" | "dislike") => {
         const token = localStorage.getItem("accessToken");
 
         if (!token) {
@@ -171,6 +195,7 @@ export function useVideoDetail() {
 
             setLikesCount(data.likes_count);
             setDislikesCount(data.dislikes_count);
+            setUserReaction(data.reaction);
         } catch (error) {
             console.error("Reaction error:", error);
             alert(t.generalError);
@@ -234,6 +259,73 @@ export function useVideoDetail() {
             return;
         }
 
+        const previousComment = comments.find(
+            (comment) => comment.id === commentId
+        );
+
+        if (!previousComment) return;
+
+        if (reactingCommentIdsRef.current.has(commentId)) return;
+
+        reactingCommentIdsRef.current.add(commentId);
+
+        setReactingCommentIds((previous) => [
+            ...previous,
+            commentId,
+        ]);
+
+        // Save the current state for rollback.
+        const previousState = {
+            likes_count: previousComment.likes_count,
+            dislikes_count: previousComment.dislikes_count,
+            is_liked: previousComment.is_liked,
+            is_disliked: previousComment.is_disliked,
+        };
+
+        // Update the UI immediately.
+        setComments((previousComments) =>
+            previousComments.map((comment) => {
+                if (comment.id !== commentId) return comment;
+
+                if (reaction === "like") {
+                    const isRemovingLike = comment.is_liked;
+
+                    return {
+                        ...comment,
+                        likes_count: Math.max(
+                            0,
+                            comment.likes_count + (isRemovingLike ? -1 : 1)
+                        ),
+                        dislikes_count: Math.max(
+                            0,
+                            comment.dislikes_count -
+                                (comment.is_disliked ? 1 : 0)
+                        ),
+                        is_liked: !isRemovingLike,
+                        is_disliked: false,
+                    };
+                }
+
+                const isRemovingDislike = comment.is_disliked;
+
+                return {
+                    ...comment,
+                    likes_count: Math.max(
+                        0,
+                        comment.likes_count -
+                            (comment.is_liked ? 1 : 0)
+                    ),
+                    dislikes_count: Math.max(
+                        0,
+                        comment.dislikes_count +
+                            (isRemovingDislike ? -1 : 1)
+                    ),
+                    is_liked: false,
+                    is_disliked: !isRemovingDislike,
+                };
+            })
+        );
+
         const endpoint = reaction === "like" ? "like" : "dislike";
 
         try {
@@ -247,26 +339,44 @@ export function useVideoDetail() {
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.error || t.generalError);
-                return;
+                throw new Error(data.error || t.generalError);
             }
 
+            // Replace the optimistic state with the server response.
             setComments((previousComments) =>
                 previousComments.map((comment) =>
                     comment.id === commentId
                         ? {
-                              ...comment,
-                              likes_count: data.likes_count,
-                              dislikes_count: data.dislikes_count,
-                              is_liked: data.liked,
-                              is_disliked: data.disliked,
-                          }
+                            ...comment,
+                            likes_count: data.likes_count,
+                            dislikes_count: data.dislikes_count,
+                            is_liked: data.liked,
+                            is_disliked: data.disliked,
+                        }
                         : comment
                 )
             );
         } catch (error) {
             console.error("Comment reaction error:", error);
-            alert(t.generalError);
+
+            // Roll back if the request fails.
+            setComments((previousComments) =>
+                previousComments.map((comment) =>
+                    comment.id === commentId
+                        ? { ...comment, ...previousState }
+                        : comment
+                )
+            );
+
+            alert(
+                error instanceof Error ? error.message : t.generalError
+            );
+        } finally {
+            reactingCommentIdsRef.current.delete(commentId);
+
+            setReactingCommentIds((previous) =>
+                previous.filter((id) => id !== commentId)
+            );
         }
     };
 
@@ -527,6 +637,8 @@ export function useVideoDetail() {
         currentUserId,
         likesCount,
         dislikesCount,
+        userReaction,
+        setUserReaction,
         comments,
         commentText,
         setCommentText,
@@ -548,5 +660,6 @@ export function useVideoDetail() {
         handleDeleteComment,
         submittingReport,
         handleReportComment,
+        reactingCommentIds,
     };
 }

@@ -148,7 +148,7 @@ export default function AdminStats({
                             item.value === "all" ? "xl:col-span-2" : ""
                         } ${
                             statusFilter === item.value
-                                ? "ring-2 ring-red-500 ring-offset-2 ring-offset-gray-100 dark:ring-offset-[#0f0f0f]"
+                                ? "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-gray-100 dark:ring-offset-[#0f0f0f]"
                                 : ""
                         }`}
                     >

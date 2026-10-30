@@ -87,7 +87,7 @@ export default function AdminReportsList({
                 onChange={(event) => onSearchChange(event.target.value)}
                 placeholder={t.searchPlaceholder}
                 aria-label={t.searchLabel}
-                className={`mb-5 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-1 focus:ring-red-700 dark:border-[#444444] dark:bg-[#181818] dark:text-white ${
+                className={`mb-5 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] dark:border-[#444444] dark:bg-[#181818] dark:text-white ${
                     isPersian && !searchTerm ? "text-right" : "text-left"
                 }`}
             />
@@ -101,7 +101,7 @@ export default function AdminReportsList({
                         aria-pressed={statusFilter === filter.value}
                         className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                             statusFilter === filter.value
-                                ? "bg-red-700 text-white"
+                                ? "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
                                 : "border border-gray-300 hover:bg-gray-100 dark:border-[#444444] dark:hover:bg-[#252525]"
                         }`}
                     >
@@ -193,7 +193,7 @@ export default function AdminReportsList({
                             type="button"
                             disabled={currentPage >= totalPages || loading}
                             onClick={() => onPageChange(currentPage + 1)}
-                            className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             {t.next}
                         </button>

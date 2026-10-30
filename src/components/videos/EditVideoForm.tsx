@@ -82,7 +82,7 @@ export default function EditVideoForm({
                         required
                         value={title}
                         onChange={(event) => setTitle(event.target.value)}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                     />
                 </div>
 
@@ -130,7 +130,7 @@ export default function EditVideoForm({
                             setDescription(event.target.value)
                         }
                         rows={5}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                     />
                 </div>
 
@@ -172,7 +172,7 @@ export default function EditVideoForm({
                     <button
                         type="submit"
                         disabled={saving}
-                        className="rounded-lg bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="accent-button rounded-lg px-5 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {saving ? t.saving : t.saveChanges}
                     </button>

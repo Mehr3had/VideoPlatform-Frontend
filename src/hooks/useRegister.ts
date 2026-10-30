@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -55,8 +54,7 @@ export default function useRegister() {
                 return;
             }
 
-            alert(t.registrationSuccess);
-            router.push("/login");
+            router.push("/register/success");
         } catch (error) {
             console.error("Registration error:", error);
             setError(t.connectionError);

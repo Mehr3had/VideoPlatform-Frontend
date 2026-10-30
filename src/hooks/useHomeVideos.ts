@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { API } from "@/lib/api";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { axiosClient } from "@/lib/axios";
 
 interface Video {
     id: number;
@@ -9,6 +10,7 @@ interface Video {
     thumbnail?: string | null;
     username: string;
     views_count: number;
+    duration: number;
     category_name?: string | null;
 }
 
@@ -23,81 +25,66 @@ interface PaginatedVideos {
 }
 
 export default function useHomeVideos() {
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
     const [search, setSearch] = useState("");
     const [appliedSearch, setAppliedSearch] = useState("");
     const [category, setCategory] = useState("");
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
 
-    const fetchVideos = useCallback(async () => {
-        try {
-            const params = new URLSearchParams({
-                page: String(page),
-            });
-
-            if (appliedSearch.trim()) {
-                params.append("search", appliedSearch.trim());
-            }
-
-            if (category) {
-                params.append("category", category);
-            }
-
-            const response = await fetch(
-                `${API}/videos/?${params.toString()}`
+    const videosQuery = useQuery({
+        queryKey: ["homeVideos", page, appliedSearch, category],
+        queryFn: async () => {
+            const response = await axiosClient.get<PaginatedVideos>(
+                "/videos/",
+                {
+                    params: {
+                        page,
+                        ...(appliedSearch.trim()
+                            ? { search: appliedSearch.trim() }
+                            : {}),
+                        ...(category ? { category } : {}),
+                    },
+                }
             );
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch videos");
-            }
+            return {
+                videos: response.data.results,
+                totalPages: Math.max(
+                    1,
+                    Math.ceil(response.data.count / 6)
+                ),
+            };
+        },
+        placeholderData: keepPreviousData,
+        staleTime: 30 * 1000,
+    });
 
-            const data: PaginatedVideos = await response.json();
+    const trendingQuery = useQuery({
+        queryKey: ["trendingVideos"],
+        queryFn: async () => {
+            const response = await axiosClient.get<Video[]>(
+                "/videos/trending/"
+            );
 
-            setVideos(data.results);
-            setTotalPages(Math.max(1, Math.ceil(data.count / 6)));
-        } catch (error) {
-            console.error("Videos error:", error);
-        }
-    }, [page, appliedSearch, category]);
+            return response.data;
+        },
+        staleTime: 60 * 1000,
+    });
 
-    useEffect(() => {
-        fetchVideos();
-    }, [fetchVideos]);
+    const categoriesQuery = useQuery({
+        queryKey: ["categories"],
+        queryFn: async () => {
+            const response = await axiosClient.get<Category[]>(
+                "/categories/"
+            );
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const [trendingResponse, categoriesResponse] =
-                    await Promise.all([
-                        fetch(`${API}/videos/trending/`),
-                        fetch(`${API}/categories/`),
-                    ]);
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
 
-                if (trendingResponse.ok) {
-                    setTrendingVideos(await trendingResponse.json());
-                } else {
-                    console.error("Failed to fetch trending videos");
-                }
-
-                if (categoriesResponse.ok) {
-                    setCategories(await categoriesResponse.json());
-                } else {
-                    console.error("Failed to fetch categories");
-                }
-            } catch (error) {
-                console.error("Home page data error:", error);
-            }
-        };
-
-        fetchInitialData();
-    }, []);
-
-    const handleSearch = () => {
+    const handleSearch = (value?: string) => {
         setPage(1);
-        setAppliedSearch(search.trim());
+        setAppliedSearch((value ?? search).trim());
     };
 
     const handleCategoryChange = (value: string) => {
@@ -106,15 +93,19 @@ export default function useHomeVideos() {
     };
 
     return {
-        videos,
-        trendingVideos,
-        categories,
+        videos: videosQuery.data?.videos ?? [],
+        trendingVideos: trendingQuery.data ?? [],
+        categories: categoriesQuery.data ?? [],
+        isLoadingVideos: videosQuery.isLoading,
+        isErrorVideos: videosQuery.isError,
+        isLoadingTrending: trendingQuery.isLoading,
+        isLoadingCategories: categoriesQuery.isLoading,
         search,
         setSearch,
         category,
         page,
         setPage,
-        totalPages,
+        totalPages: videosQuery.data?.totalPages ?? 1,
         handleSearch,
         handleCategoryChange,
     };

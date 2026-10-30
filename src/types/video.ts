@@ -4,6 +4,16 @@ export interface Video {
     description: string;
     video_file: string;
     thumbnail: string | null;
+    subtitles: {
+        language: string;
+        label: string;
+        src: string;
+    }[];
+    qualities: {
+        resolution: number;
+        label: string;
+        src: string;
+    }[];
     user_id: number;
     username: string;
     views_count: number;

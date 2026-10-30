@@ -145,28 +145,6 @@ export default function NotificationItem({
                 );
             }
 
-            case "milestone": {
-                const match = notification.message.match(
-                    /reached\s+(\d+)\s+subscribers/i
-                );
-
-                if (!match) {
-                    return notification.message;
-                }
-
-                const count = new Intl.NumberFormat(
-                    isPersian ? "fa-IR" : "en-US"
-                ).format(Number(match[1]));
-
-                return (
-                    <>
-                        {t.milestonePrefix}{" "}
-                        <bdi dir="ltr">{count}</bdi>{" "}
-                        {t.milestoneSuffix}
-                    </>
-                );
-            }
-
             default:
                 // برای اعلان‌هایی که هنوز قالبشان را نمی‌شناسیم،
                 // پیام اصلی بک‌اند را بدون تغییر نمایش می‌دهیم.
@@ -180,7 +158,7 @@ export default function NotificationItem({
             className={`flex flex-col gap-4 rounded-xl border p-5 transition sm:flex-row sm:items-center ${
                 notification.is_read
                     ? "border-gray-200 bg-white dark:border-[#303030] dark:bg-[#181818]"
-                    : "border-red-200 bg-red-50/60 dark:border-red-900/70 dark:bg-red-950/20"
+                    : "border-[var(--accent)]/40 bg-[var(--accent)]/5"
             }`}
         >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm dark:bg-[#252525]">
@@ -194,7 +172,7 @@ export default function NotificationItem({
 
                 {notification.type === "video_like" &&
                     notification.interaction_count > 0 && (
-                        <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-400">
+                        <p className="mt-1 text-sm font-medium text-[var(--accent)]">
                             👍 {formattedCount} {t.interactions}
                         </p>
                     )}
@@ -233,7 +211,7 @@ export default function NotificationItem({
                         type="button"
                         onClick={() => onMarkAsRead(notification.id)}
                         disabled={isUpdating || updatingId === -1}
-                        className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white"
+                        className="rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isUpdating ? t.updating : t.markRead}
                     </button>

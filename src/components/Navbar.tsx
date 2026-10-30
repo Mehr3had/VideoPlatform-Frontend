@@ -45,9 +45,7 @@ export default function Navbar() {
     const { unreadCount, setUnreadCount } = useNavbarNotifications();
     const { darkMode, toggleTheme } = useTheme();
     const { language, setLanguage, isPersian } = useLanguage();
-
     const t = translations[language];
-
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -101,26 +99,26 @@ export default function Navbar() {
                 </Link>
 
                 <div className="relative" ref={menuRef}>
-                    <button
-                        type="button"
-                        onClick={() => setMenuOpen((previous) => !previous)}
-                        aria-label={t.openMenu}
-                        aria-expanded={menuOpen}
-                        aria-haspopup="true"
-                        className="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
-                    >
-                        ⋮
-                    </button>
+                    {username && userId ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setMenuOpen((previous) => !previous)}
+                                aria-label={t.openMenu}
+                                aria-expanded={menuOpen}
+                                aria-haspopup="true"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
+                            >
+                                ⋮
+                            </button>
 
-                    {menuOpen && (
-                        <div
-                            role="menu"
-                            className={`absolute top-full mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl dark:border-[#303030] dark:bg-[#202020] ${
-                                isPersian ? "left-0" : "right-0"
-                            }`}
-                        >
-                            {username && userId ? (
-                                <>
+                            {menuOpen && (
+                                <div
+                                    role="menu"
+                                    className={`absolute top-full mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl dark:border-[#303030] dark:bg-[#202020] ${
+                                        isPersian ? "left-0" : "right-0"
+                                    }`}
+                                >
                                     <Link
                                         href={`/profile/${userId}`}
                                         role="menuitem"
@@ -174,9 +172,7 @@ export default function Navbar() {
 
                                         {unreadCount > 0 && (
                                             <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
-                                                {unreadCount > 99
-                                                    ? "99+"
-                                                    : unreadCount}
+                                                {unreadCount > 99 ? "99+" : unreadCount}
                                             </span>
                                         )}
                                     </Link>
@@ -205,67 +201,43 @@ export default function Navbar() {
                                         </span>
                                         {darkMode ? t.lightMode : t.darkMode}
                                     </button>
-                                </>
-                            ) : (
-                                <>
-                                    <Link
-                                        href="/login"
-                                        role="menuitem"
-                                        onClick={() => setMenuOpen(false)}
-                                        className={menuItemClass}
-                                    >
-                                        {t.login}
-                                    </Link>
 
-                                    <Link
-                                        href="/register"
-                                        role="menuitem"
-                                        onClick={() => setMenuOpen(false)}
-                                        className={menuItemClass}
-                                    >
-                                        {t.register}
-                                    </Link>
-                                </>
-                            )}
+                                    <div className="my-2 border-t border-gray-200 dark:border-[#303030]" />
 
-                            <div className="my-2 border-t border-gray-200 dark:border-[#303030]" />
+                                    <div className="px-4 py-3">
+                                        <p className="mb-3 text-sm font-medium text-gray-800 dark:text-gray-200">
+                                            🌐 {t.language}
+                                        </p>
 
-                            <div className="px-4 py-3">
-                                <p className="mb-3 text-sm font-medium text-gray-800 dark:text-gray-200">
-                                    🌐 {t.language}
-                                </p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleLanguageChange("fa")}
+                                                aria-pressed={language === "fa"}
+                                                className={`rounded-lg border px-2 py-2 text-sm transition ${
+                                                    language === "fa"
+                                                        ? "border-[var(--accent)] bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                                                        : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
+                                                }`}
+                                            >
+                                                🇮🇷 {t.persian}
+                                            </button>
 
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleLanguageChange("fa")}
-                                        aria-pressed={language === "fa"}
-                                        className={`rounded-lg border px-2 py-2 text-sm transition ${
-                                            language === "fa"
-                                                ? "border-red-600 bg-red-50 font-semibold text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                                                : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
-                                        }`}
-                                    >
-                                        🇮🇷 {t.persian}
-                                    </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleLanguageChange("en")}
+                                                aria-pressed={language === "en"}
+                                                className={`rounded-lg border px-2 py-2 text-sm transition ${
+                                                    language === "en"
+                                                        ? "border-[var(--accent)] bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                                                        : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
+                                                }`}
+                                            >
+                                                🇬🇧 {t.english}
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => handleLanguageChange("en")}
-                                        aria-pressed={language === "en"}
-                                        className={`rounded-lg border px-2 py-2 text-sm transition ${
-                                            language === "en"
-                                                ? "border-red-600 bg-red-50 font-semibold text-red-700 dark:bg-red-950/30 dark:text-red-400"
-                                                : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
-                                        }`}
-                                    >
-                                        🇬🇧 {t.english}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {username && userId && (
-                                <>
                                     <div className="my-2 border-t border-gray-200 dark:border-[#303030]" />
 
                                     <button
@@ -277,8 +249,28 @@ export default function Navbar() {
                                         <span aria-hidden="true">↪</span>
                                         {t.logout}
                                     </button>
-                                </>
+                                </div>
                             )}
+                        </>
+                    ) : (
+                        <div
+                            className={`flex items-center gap-2 ${
+                                isPersian ? "flex-row" : "flex-row-reverse"
+                            }`}
+                        >
+                            <Link
+                                href="/login"
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
+                            >
+                                {t.login}
+                            </Link>
+
+                            <Link
+                                href="/register"
+                                className="accent-button rounded-lg px-4 py-2 text-sm font-medium transition"
+                            >
+                                {t.register}
+                            </Link>
                         </div>
                     )}
                 </div>

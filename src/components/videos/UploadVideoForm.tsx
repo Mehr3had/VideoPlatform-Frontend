@@ -88,7 +88,7 @@ export default function UploadVideoForm({
                         onChange={(event) => setTitle(event.target.value)}
                         required
                         placeholder={t.titlePlaceholder}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
                 </div>
 
@@ -109,7 +109,7 @@ export default function UploadVideoForm({
                         }
                         rows={5}
                         placeholder={t.descriptionPlaceholder}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
                 </div>
 
@@ -127,7 +127,7 @@ export default function UploadVideoForm({
                         onChange={(event) =>
                             setCategoryId(event.target.value)
                         }
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                     >
                         <option value="">{t.selectCategory}</option>
 
@@ -180,7 +180,7 @@ export default function UploadVideoForm({
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-lg bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="accent-button w-full rounded-lg px-5 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {loading ? t.uploading : t.upload}
                 </button>

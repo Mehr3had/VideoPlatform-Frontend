@@ -29,7 +29,7 @@ export default function ResetPasswordForm({
     const t = translations[language].resetPassword;
 
     const inputClass =
-        "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-2 focus:ring-red-100 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-red-950";
+        "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-[var(--accent)]/20";
 
     const labelClass =
         "mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300";
@@ -40,7 +40,7 @@ export default function ResetPasswordForm({
             className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm dark:bg-[#181818]"
         >
             <div className="mb-6">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-red-50 text-2xl dark:bg-red-950">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-2xl">
                     🔒
                 </div>
 
@@ -115,7 +115,7 @@ export default function ResetPasswordForm({
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full rounded-lg bg-red-700 px-5 py-3 font-medium text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="accent-button w-full rounded-lg px-5 py-3 font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {loading ? t.submitting : t.submit}
                     </button>
@@ -126,7 +126,7 @@ export default function ResetPasswordForm({
                 {t.rememberPassword}{" "}
                 <Link
                     href="/login"
-                    className="font-medium text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    className="font-medium text-[var(--accent)] transition hover:opacity-80"
                 >
                     {t.login}
                 </Link>

@@ -66,7 +66,7 @@ export default function ProfileHeader({
                         <>
                             <Link
                                 href="/dashboard"
-                                className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 dark:bg-[#303030] dark:hover:bg-[#404040]"
+                                className="accent-button rounded-lg px-5 py-2.5 text-sm font-medium"
                             >
                                 {t.dashboard}
                             </Link>
@@ -85,7 +85,7 @@ export default function ProfileHeader({
                             className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
                                 profile.is_subscribed
                                     ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
-                                    : "bg-red-700 text-white hover:bg-red-800"
+                                    : "accent-button"
                             }`}
                         >
                             {profile.is_subscribed

@@ -4,9 +4,11 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useDashboard } from "@/hooks/useDashboard";
 import StatCard from "@/components/StatCard";
-import DashboardVideoCard from "@/components/DashboardVideoCard";
+import DashboardVideoCard from "@/components/dashboard/DashboardVideoCard";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import { useCallback, useState } from "react";
+import DeleteVideoDialog from "@/components/dashboard/DeleteVideoDialog";
 
 export default function DashboardPage() {
     const {
@@ -17,20 +19,40 @@ export default function DashboardPage() {
         deleteVideo,
     } = useDashboard();
 
-    const { language, isPersian } = useLanguage();
-    const t = translations[language].dashboard;
+    const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
+    const selectedVideo = videos.find(
+        (video) => video.id === selectedVideoId
+    );
+    const closeDeleteDialog = useCallback(() => {
+        if (deleteLoading) return;
 
-    const handleDelete = async (videoId: number) => {
-        const confirmed = window.confirm(t.confirmDelete);
+        setSelectedVideoId(null);
+        setDeleteError("");
+    }, [deleteLoading]);
+    const handleDelete = async () => {
+        if (selectedVideoId === null || deleteLoading) return;
 
-        if (!confirmed) return;
+        setDeleteLoading(true);
+        setDeleteError("");
 
-        const result = await deleteVideo(videoId);
+        try {
+            const result = await deleteVideo(selectedVideoId);
 
-        if (!result.success && result.message) {
-            window.alert(result.message);
+            if (result.success) {
+                setSelectedVideoId(null);
+            } else if (result.message) {
+                setDeleteError(result.message);
+            } else {
+                setSelectedVideoId(null);
+            }
+        } finally {
+            setDeleteLoading(false);
         }
     };
+    const { language, isPersian } = useLanguage();
+    const t = translations[language].dashboard;
 
     if (loading) {
         return (
@@ -69,7 +91,7 @@ export default function DashboardPage() {
                     <button
                         type="button"
                         onClick={() => window.location.reload()}
-                        className="mt-6 rounded-lg bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-800"
+                        className="accent-button mt-6 rounded-lg px-5 py-3 font-medium"
                     >
                         {t.tryAgain}
                     </button>
@@ -99,7 +121,7 @@ export default function DashboardPage() {
 
                     <Link
                         href="/dashboard/upload"
-                        className="inline-flex items-center justify-center rounded-lg bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-800"
+                        className="accent-button inline-flex items-center justify-center rounded-lg px-5 py-3 font-medium"
                     >
                         {t.uploadVideo}
                     </Link>
@@ -133,13 +155,26 @@ export default function DashboardPage() {
                                 <DashboardVideoCard
                                     key={video.id}
                                     video={video}
-                                    onDelete={handleDelete}
+                                    onDelete={(videoId) => {
+                                        setDeleteError("");
+                                        setSelectedVideoId(videoId);
+                                    }}
                                 />
                             ))}
                         </div>
                     </div>
                 )}
             </section>
+
+            {selectedVideo && (
+                <DeleteVideoDialog
+                    videoTitle={selectedVideo.title}
+                    loading={deleteLoading}
+                    error={deleteError}
+                    onConfirm={handleDelete}
+                    onCancel={closeDeleteDialog}
+                />
+            )}
         </main>
     );
 }

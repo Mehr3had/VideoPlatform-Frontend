@@ -144,7 +144,7 @@ export default function AdminReportCard({
                         onClick={() =>
                             onChangeStatus(report.id, "reviewed")
                         }
-                        className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {updating ? t.updating : t.markReviewed}
                     </button>

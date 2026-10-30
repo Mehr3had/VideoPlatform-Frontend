@@ -110,7 +110,7 @@ export default function RecoveryForm({
                         onChange={(event) => setEmail(event.target.value)}
                         required
                         placeholder={t.emailPlaceholder}
-                        className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-2 focus:ring-red-100 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-red-950 ${
+                        className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-[var(--accent)]/20 ${
                             isPersian && !email ? "text-right" : "text-left"
                         }`}
                     />
@@ -120,7 +120,7 @@ export default function RecoveryForm({
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-lg bg-red-700 px-5 py-3 font-medium text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="accent-button w-full rounded-lg px-5 py-3 font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {loading ? t.loadingText : t.buttonText}
                 </button>
@@ -130,7 +130,7 @@ export default function RecoveryForm({
                 {t.footerText}{" "}
                 <Link
                     href="/login"
-                    className="font-medium text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    className="font-medium text-[var(--accent)] transition hover:opacity-80"
                 >
                     {t.login}
                 </Link>
@@ -141,7 +141,7 @@ export default function RecoveryForm({
                     {extraLink.text}{" "}
                     <Link
                         href={extraLink.href}
-                        className="font-medium text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                        className="font-medium text-[var(--accent)] transition hover:opacity-80"
                     >
                         {extraLink.label}
                     </Link>

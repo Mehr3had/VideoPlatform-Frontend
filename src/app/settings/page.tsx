@@ -7,6 +7,7 @@ import DeleteAccountForm from "@/components/settings/DeleteAccountForm";
 import useAccountSettings from "@/hooks/useAccountSettings";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import AppearanceSettings from "@/components/settings/AppearanceSettings";
 
 export default function SettingsPage() {
     const {
@@ -53,6 +54,8 @@ export default function SettingsPage() {
                         {t.subtitle}
                     </p>
                 </div>
+
+                <AppearanceSettings />
 
                 <UsernameForm
                     username={newUsername}

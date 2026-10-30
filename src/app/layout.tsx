@@ -1,8 +1,10 @@
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
+import QueryProvider from "@/components/providers/QueryProvider";
+import "video.js/dist/video-js.css";
+import AppearanceInitializer from "@/components/AppearanceInitializer";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -28,7 +30,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             suppressHydrationWarning
         >
             <body className="flex min-h-full flex-col">
-                <LanguageProvider>{children}</LanguageProvider>
+                <AppearanceInitializer />
+                <LanguageProvider>
+                    <QueryProvider>{children}</QueryProvider>
+                </LanguageProvider>
             </body>
         </html>
     );
