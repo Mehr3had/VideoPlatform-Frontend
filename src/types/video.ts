@@ -3,6 +3,7 @@ export interface Video {
     title: string;
     description: string;
     video_file: string;
+    hls_url: string | null;
     thumbnail: string | null;
     subtitles: {
         language: string;

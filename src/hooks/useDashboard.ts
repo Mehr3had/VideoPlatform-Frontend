@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -39,7 +44,6 @@ export function useDashboard() {
     const router = useRouter();
     const { language } = useLanguage();
     const t = translations[language].dashboard;
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [videos, setVideos] = useState<DashboardVideo[]>([]);
@@ -49,22 +53,27 @@ export function useDashboard() {
         let cancelled = false;
 
         const getDashboard = async () => {
-            const token = localStorage.getItem("accessToken");
-
-            if (!token) {
-                router.push("/login");
-                setLoading(false);
-                return;
-            }
-
             try {
                 setLoading(true);
                 setError(null);
 
+                // Restore authentication from the HttpOnly cookie if needed.
+                const token = await ensureAccessToken();
+
+                if (cancelled) return;
+
+                if (!token) {
+                    localStorage.removeItem("username");
+                    router.push("/login");
+                    return;
+                }
+
                 const response = await apiFetch(`${API}/dashboard/`);
 
+                if (cancelled) return;
+
                 if (response.status === 401) {
-                    localStorage.removeItem("accessToken");
+                    clearAccessToken();
                     localStorage.removeItem("username");
                     router.push("/login");
                     return;
@@ -110,7 +119,10 @@ export function useDashboard() {
     const deleteVideo = async (
         videoId: number
     ): Promise<{ success: boolean; message?: string }> => {
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            localStorage.removeItem("username");
             router.push("/login");
             return { success: false };
         }
@@ -125,7 +137,7 @@ export function useDashboard() {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    localStorage.removeItem("accessToken");
+                    clearAccessToken();
                     localStorage.removeItem("username");
                     router.push("/login");
                     return { success: false };

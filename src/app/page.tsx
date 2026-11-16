@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import VideoCard from "@/components/videos/VideoCard";
+import LiveStreamCard from "@/components/live/LiveStreamCard";
 import VideoFilters from "@/components/videos/VideoFilters";
 import useHomeVideos from "@/hooks/useHomeVideos";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,6 +12,7 @@ export default function Home() {
     const {
         videos,
         trendingVideos,
+        activeLiveStreams,
         categories,
         isLoadingVideos,
         isErrorVideos,
@@ -45,7 +47,32 @@ export default function Home() {
                     onCategoryChange={handleCategoryChange}
                     onSearch={handleSearch}
                 />
-        
+
+                {!search.trim() && activeLiveStreams.length > 0 && (
+                    <section className="mb-12">
+                        <div className="mb-6 flex items-center gap-3">
+                            <span className="relative flex h-3 w-3">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+                            </span>
+
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                {isPersian
+                                    ? "\u067E\u062E\u0634 \u0632\u0646\u062F\u0647"
+                                    : "Live now"}
+                            </h2>
+                        </div>
+
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {activeLiveStreams.map((stream) => (
+                                <LiveStreamCard
+                                    key={stream.id}
+                                    stream={stream}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
                 {!search.trim() && trendingVideos.length > 0 && (
                     <section className="mb-12">
                         <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">

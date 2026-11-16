@@ -16,8 +16,10 @@ interface VideoQualityOption {
 
 interface VideoPlayerProps {
     src: string;
+    hlsSrc?: string | null;
     poster?: string | null;
     videoId: string | number;
+    title: string;
     subtitles: {
         language: string;
         label: string;
@@ -80,6 +82,7 @@ function registerSettingsButton() {
             super(player, options);
 
             this.addClass("vjs-settings-button");
+            this.addClass("vjs-desktop-settings-button");
             this.el()?.setAttribute("aria-label", "Settings");
             this.el()?.setAttribute("title", "Settings");
         }
@@ -306,25 +309,54 @@ function addSkipButtons(player: Player) {
     });
 }
 
+type SettingsSection = "main" | "subtitles" | "speed" | "quality";
 export default function VideoPlayer({
     src,
+    hlsSrc,
     poster,
     videoId,
+    title,
     subtitles,
     qualities,
 }: VideoPlayerProps) {
+    const titleCharacters = Array.from(title.trim());
+
+    const displayTitle =
+        titleCharacters.length > 35
+            ? `${titleCharacters.slice(0, 35).join("")}…`
+            : title.trim();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
     const { isPersian } = useLanguage();
+    const subtitlePreferenceKey =
+        `video-platform:subtitle:${String(videoId)}`;
     const [skipFeedback, setSkipFeedback] = useState<{
         direction: "backward" | "forward";
         id: number;
     } | null>(null);
 
     const [isFastForwarding, setIsFastForwarding] = useState(false);
+    const [playbackFeedback, setPlaybackFeedback] = useState<{
+        action: "play" | "pause";
+        id: number;
+    } | null>(null);
+
+    const playbackFeedbackTimerRef =
+        useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const singleTapTimerRef =
+        useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const desktopClickTimerRef =
+        useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const lastTouchAtRef = useRef(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [settingsSection, setSettingsSection] =
+        useState<SettingsSection>("main");
     const [selectedSubtitle, setSelectedSubtitle] = useState("off");
     const selectedSubtitleRef = useRef("off");
+    const hasPlaybackStartedRef = useRef(false);
     const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
     const [selectedQuality, setSelectedQuality] = useState("auto");
     const pendingQualityRef = useRef<string | null>(null);
@@ -334,9 +366,9 @@ export default function VideoPlayer({
 
     const lastTapRef = useRef<{
         time: number;
-        side: "left" | "right";
+        side: "left" | "center" | "right";
     } | null>(null);
-    
+
     const qualitySwitchingRef = useRef(false);
     const qualitySwitchIdRef = useRef(0);
     const qualitySwitchTimeRef = useRef<number | null>(null);
@@ -398,48 +430,177 @@ export default function VideoPlayer({
         }, 600);
     }, []);
 
+    const showPlaybackFeedback = useCallback(
+        (action: "play" | "pause") => {
+            setPlaybackFeedback({
+                action,
+                id: Date.now(),
+            });
+
+            if (playbackFeedbackTimerRef.current !== null) {
+                clearTimeout(playbackFeedbackTimerRef.current);
+            }
+
+            playbackFeedbackTimerRef.current = setTimeout(() => {
+                setPlaybackFeedback(null);
+                playbackFeedbackTimerRef.current = null;
+            }, 600);
+        },
+        []
+    );
+
+    const togglePlayback = useCallback(() => {
+        const player = playerRef.current;
+
+        if (!player || player.isDisposed()) return;
+
+        const nativeVideo = player.el()?.querySelector("video");
+
+        if (!nativeVideo) return;
+
+        if (nativeVideo.paused) {
+            showPlaybackFeedback("play");
+
+            const playPromise = player.play();
+
+            if (playPromise && typeof playPromise.catch === "function") {
+                void playPromise.catch((error) => {
+                    console.error("[PLAY ERROR]", error);
+
+                    if (playbackFeedbackTimerRef.current !== null) {
+                        clearTimeout(playbackFeedbackTimerRef.current);
+                        playbackFeedbackTimerRef.current = null;
+                    }
+
+                    setPlaybackFeedback(null);
+                });
+            }
+        } else {
+            player.pause();
+            showPlaybackFeedback("pause");
+        }
+    }, [showPlaybackFeedback]);
+
     const handlePlayerDoubleTap = useCallback(
         (event: React.TouchEvent<HTMLDivElement>) => {
+            if (isSettingsOpen) return;
+
             const target = event.target;
 
             if (
                 target instanceof Element &&
-                target.closest(".vjs-control-bar, .vjs-big-play-button")
+                target.closest(
+                    ".vjs-control-bar, .vjs-big-play-button, .vjs-menu, .vjs-modal-dialog, .mobile-player-header"
+                )
             ) {
                 lastTapRef.current = null;
+
+                if (singleTapTimerRef.current !== null) {
+                    clearTimeout(singleTapTimerRef.current);
+                    singleTapTimerRef.current = null;
+                }
+
                 return;
             }
 
-            const now = Date.now();
             const touch = event.changedTouches[0];
 
             if (!touch) return;
 
-            const bounds = event.currentTarget.getBoundingClientRect();
-            const side =
-                touch.clientX < bounds.left + bounds.width / 2
-                    ? "left"
-                    : "right";
+            const now = Date.now();
+            lastTouchAtRef.current = now;
 
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const relativeX =
+                (touch.clientX - bounds.left) / bounds.width;
+            const side: "left" | "center" | "right" =
+                relativeX < 0.4
+                    ? "left"
+                    : relativeX > 0.6
+                        ? "right"
+                        : "center";
             const previousTap = lastTapRef.current;
 
+            // Double tap
             if (
                 previousTap &&
                 previousTap.side === side &&
                 now - previousTap.time < 300
             ) {
                 lastTapRef.current = null;
-                skip(side === "left" ? -10 : 10);
+                if (singleTapTimerRef.current !== null) {
+                    clearTimeout(singleTapTimerRef.current);
+                    singleTapTimerRef.current = null;
+                }
+
+                if (side === "center") {
+                    togglePlayback();
+                } else {
+                    skip(side === "left" ? -10 : 10);
+                }
+
                 return;
+            }
+
+            if (singleTapTimerRef.current !== null) {
+                clearTimeout(singleTapTimerRef.current);
+                singleTapTimerRef.current = null;
             }
 
             lastTapRef.current = {
                 time: now,
                 side,
             };
+
+            // Single tap in the center
+            if (side === "center") {
+                singleTapTimerRef.current = setTimeout(() => {
+                    singleTapTimerRef.current = null;
+                    lastTapRef.current = null;
+                    togglePlayback();
+                }, 320);
+            }
         },
-        [skip]
+        [skip, togglePlayback, isSettingsOpen]
     );
+
+    const handlePlayerClick = useCallback(
+        (event: React.MouseEvent<HTMLDivElement>) => {
+            // Ignore synthetic clicks generated after touch
+            if (Date.now() - lastTouchAtRef.current < 700) {
+                return;
+            }
+
+            if (isSettingsOpen) return;
+
+            const target = event.target;
+
+            if (
+                target instanceof Element &&
+                target.closest(
+                    ".vjs-poster, .vjs-control-bar, .vjs-big-play-button, .vjs-menu, .vjs-modal-dialog, .mobile-player-header, button, a, input, textarea"
+                )
+            ) {
+                return;
+            }
+
+            // Ignore the second click of a double-click
+            if (event.detail > 1) {
+                return;
+            }
+
+            // Execute immediately while user interaction is active
+            togglePlayback();
+        },
+        [togglePlayback, isSettingsOpen]
+    );
+
+    const handlePlayerDoubleClick = useCallback(() => {
+        if (desktopClickTimerRef.current !== null) {
+            clearTimeout(desktopClickTimerRef.current);
+            desktopClickTimerRef.current = null;
+        }
+    }, []);
 
     const handleHoldStart = useCallback(
         (event: React.PointerEvent<HTMLDivElement>) => {
@@ -530,7 +691,7 @@ export default function VideoPlayer({
         player.playbackRate(rate);
         useVideoPlayerStore.getState().setPlaybackRate(rate);
     };
-    
+
     const handleQualityChange = (quality: string) => {
         const player = playerRef.current;
 
@@ -538,7 +699,7 @@ export default function VideoPlayer({
 
         const getQualitySource = (value: string) =>
             value === "auto"
-                ? src
+                ? hlsSrc || src
                 : qualities.find(
                     (item) => String(item.resolution) === value
                 )?.src;
@@ -833,7 +994,10 @@ export default function VideoPlayer({
             try {
                 player.src({
                     src: selectedSource,
-                    type: "video/mp4",
+                    type:
+                        targetQuality === "auto" && hlsSrc
+                            ? "application/x-mpegURL"
+                            : "video/mp4",
                 });
             } catch {
                 handleSwitchError();
@@ -845,87 +1009,85 @@ export default function VideoPlayer({
     };
 
     const handleSubtitleChange = (language: string) => {
+        // Only allow "off" or an available subtitle language.
+        if (
+            language !== "off" &&
+            !subtitles.some((subtitle) => subtitle.language === language)
+        ) {
+            return;
+        }
+
+        // Update the current selection immediately.
+        selectedSubtitleRef.current = language;
+        setSelectedSubtitle(language);
+
+        // Persist the selection separately for each video.
+        try {
+            localStorage.setItem(subtitlePreferenceKey, language);
+        } catch (error) {
+            console.warn("Could not save subtitle preference:", error);
+        }
+
         const player = playerRef.current;
 
         if (!player || player.isDisposed()) return;
 
-        selectedSubtitleRef.current = language;
-
         const textTracks = player.textTracks();
-
-        console.log(
-            "Text tracks:",
-            Array.from({ length: textTracks.length }, (_, i) => {
-                const track = (textTracks as unknown as {
-                    [index: number]: TextTrack;
-                })[i];
-
-                return track
-                    ? {
-                        kind: track.kind,
-                        language: track.language,
-                        label: track.label,
-                        mode: track.mode,
-                    }
-                    : null;
-            })
-        );
-
-        // Video.js TextTrackList را با رویدادهای addtrack و length می‌خوانیم.
-        const tracks: TextTrack[] = [];
 
         for (let i = 0; i < textTracks.length; i++) {
             const track = (textTracks as unknown as {
                 [index: number]: TextTrack;
             })[i];
 
-            if (track) {
-                tracks.push(track);
-            }
-        }
-
-        tracks.forEach((track) => {
-            if (track.kind !== "subtitles" && track.kind !== "captions") {
-                return;
+            if (
+                !track ||
+                (track.kind !== "subtitles" && track.kind !== "captions")
+            ) {
+                continue;
             }
 
             track.mode =
-                language !== "off" && track.language === language
+                hasPlaybackStartedRef.current &&
+                language !== "off" &&
+                track.language === language
                     ? "showing"
                     : "disabled";
-        });
-
-        setSelectedSubtitle(language);
-
-        console.log(
-            "Subtitle tracks after selection:",
-            Array.from(
-                { length: player.textTracks().length },
-                (_, i) => {
-                    const track = (
-                        player.textTracks() as unknown as {
-                            [index: number]: TextTrack;
-                        }
-                    )[i];
-
-                    return track
-                        ? {
-                            kind: track.kind,
-                            language: track.language,
-                            mode: track.mode,
-                        }
-                        : null;
-                }
-            )
-        );
+        }
     };
+
+    useEffect(() => {
+        let preference = "off";
+
+        try {
+            const saved = localStorage.getItem(subtitlePreferenceKey);
+
+            if (saved === "off") {
+                preference = "off";
+            } else if (
+                saved &&
+                subtitles.some((subtitle) => subtitle.language === saved)
+            ) {
+                preference = saved;
+            } else if (saved) {
+                // Remove an outdated preference.
+                localStorage.removeItem(subtitlePreferenceKey);
+            }
+        } catch (error) {
+            console.warn("Could not restore subtitle preference:", error);
+        }
+
+        // Update the ref before the player initialization effect runs.
+        selectedSubtitleRef.current = preference;
+        setSelectedSubtitle(preference);
+
+    }, [subtitlePreferenceKey, subtitles]);
 
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
         const id = String(videoId);
-
+        hasPlaybackStartedRef.current = false;
         let restoredProgress = false;
         let restoringProgress = false;
         let disposed = false;
@@ -945,6 +1107,9 @@ export default function VideoPlayer({
 
         const player = videojs(videoElement, {
             controls: true,
+            userActions: {
+                click: false,
+            },
             responsive: true,
             fluid: true,
             aspectRatio: "16:9",
@@ -952,7 +1117,12 @@ export default function VideoPlayer({
             poster: poster || undefined,
             crossOrigin: "anonymous",
             playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
-            sources: [{ src }],
+            sources: [
+                {
+                    src: hlsSrc || src,
+                    type: hlsSrc ? "application/x-mpegURL" : "video/mp4",
+                },
+            ],
         });
 
         playerRef.current = player;
@@ -972,12 +1142,19 @@ export default function VideoPlayer({
                 }
 
                 track.mode =
+                    hasPlaybackStartedRef.current &&
                     selectedSubtitleRef.current !== "off" &&
                     track.language === selectedSubtitleRef.current
                         ? "showing"
                         : "disabled";
             }
         };
+
+        const handlePlayerPlaying = () => {
+            hasPlaybackStartedRef.current = true;
+            applySelectedSubtitle();
+        };
+        player.on("playing", handlePlayerPlaying);
 
         const registerSubtitleTracks = () => {
             subtitles.forEach((subtitle) => {
@@ -1025,7 +1202,9 @@ export default function VideoPlayer({
         if (playerRoot instanceof HTMLElement) {
             setPlayerElement(playerRoot);
         }
+
         const handleSettingsButtonClick = () => {
+            setSettingsSection("main");
             setIsSettingsOpen((current) => !current);
         };
 
@@ -1035,6 +1214,13 @@ export default function VideoPlayer({
 
         player.ready(() => {
             if (player.isDisposed()) return;
+
+            const nativeVideo = player.el()?.querySelector("video");
+
+            if (nativeVideo instanceof HTMLVideoElement) {
+                nativeVideo.disablePictureInPicture = false;
+                nativeVideo.removeAttribute("disablepictureinpicture");
+            }
 
             registerSubtitleTracks();
 
@@ -1373,6 +1559,7 @@ export default function VideoPlayer({
                 player.off("volumechange", handleVolumeChange);
                 player.off("settingsbuttonclick", handleSettingsButtonClick);
                 player.off("loadedmetadata", registerSubtitleTracks);
+                player.off("playing", handlePlayerPlaying);
                 setPlayerElement(null);
                 setIsSettingsOpen(false);
 
@@ -1383,7 +1570,7 @@ export default function VideoPlayer({
                 playerRef.current = null;
             }
 
-            container.replaceChildren();
+            videoElement.remove();
         };
     }, [src, poster, videoId]);
 
@@ -1432,128 +1619,432 @@ export default function VideoPlayer({
         };
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (singleTapTimerRef.current !== null) {
+                clearTimeout(singleTapTimerRef.current);
+            }
+
+            if (desktopClickTimerRef.current !== null) {
+                clearTimeout(desktopClickTimerRef.current);
+            }
+
+            if (playbackFeedbackTimerRef.current !== null) {
+                clearTimeout(playbackFeedbackTimerRef.current);
+            }
+        };
+    }, []);
+
     return (
         <div
             ref={containerRef}
             data-vjs-player
             onTouchEnd={handlePlayerDoubleTap}
+            onClick={handlePlayerClick}
+            onDoubleClick={handlePlayerDoubleClick}
             onPointerDown={handleHoldStart}
             onPointerUp={handleHoldEnd}
             onPointerCancel={handleHoldEnd}
-            className="relative w-full overflow-hidden rounded-xl bg-black [&_.video-js]:bg-black"
+            className="relative w-full min-w-0 overflow-hidden rounded-lg bg-black sm:rounded-xl [&_.video-js]:bg-black"
         >
+            {/* Mobile player header */}
+            <div
+                dir="ltr"
+                className="mobile-player-header pointer-events-none absolute left-2 right-2 top-2 z-20 flex flex-row items-center justify-between gap-3"
+            >
+                {/* Settings button - Left */}
+                <button
+                    type="button"
+                    onClick={() =>
+                        playerRef.current?.trigger("settingsbuttonclick")
+                    }
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onTouchEnd={(event) => event.stopPropagation()}
+                    aria-label={isPersian ? "تنظیمات" : "Settings"}
+                    title={isPersian ? "تنظیمات" : "Settings"}
+                    className="pointer-events-auto flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80 active:bg-black"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M10.3 2.8h3.4l.5 2.1a7.5 7.5 0 0 1 1.7.7l1.9-1.1 2.4 2.4-1.1 1.9a7.5 7.5 0 0 1 .7 1.7l2.1.5v3.4l-2.1.5a7.5 7.5 0 0 1-.7 1.7l1.1 1.9-2.4 2.4-1.9-1.1a7.5 7.5 0 0 1-1.7.7l-.5 2.1h-3.4l-.5-2.1a7.5 7.5 0 0 1-1.7-.7l-1.9 1.1-2.4-2.4 1.1-1.9a7.5 7.5 0 0 1-.7-1.7l-2.1-.5v-3.4l2.1-.5a7.5 7.5 0 0 1 .7-1.7L3.8 6.9l2.4-2.4 1.9 1.1a7.5 7.5 0 0 1 1.7-.7z" />
+                        <circle cx="12" cy="12" r="3.1" />
+                    </svg>
+                </button>
+
+                {/* Video title - Right */}
+                <div
+                    dir={isPersian ? "rtl" : "ltr"}
+                    title={title}
+                    className="pointer-events-auto min-w-0 flex-1 overflow-hidden"
+                >
+                    <span
+                        className={`block truncate text-sm font-semibold text-white drop-shadow-md ${
+                            isPersian ? "text-right" : "text-left"
+                        }`}
+                    >
+                        {displayTitle}
+                    </span>
+                </div>
+            </div>
+
+            {/* Play / Pause feedback */}
+            {playbackFeedback && (
+                <div
+                    key={playbackFeedback.id}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+                >
+                    <div className="playback-feedback-icon flex h-16 w-16 items-center justify-center rounded-full bg-black/65 text-white shadow-xl backdrop-blur-sm sm:h-20 sm:w-20">
+                        {playbackFeedback.action === "play" ? (
+                            <svg
+                                viewBox="0 0 24 24"
+                                className="ml-1 h-9 w-9 sm:h-11 sm:w-11"
+                                fill="currentColor"
+                            >
+                                <path d="M7 4.5v15L19 12 7 4.5Z" />
+                            </svg>
+                        ) : (
+                            <svg
+                                viewBox="0 0 24 24"
+                                className="h-9 w-9 sm:h-11 sm:w-11"
+                                fill="currentColor"
+                            >
+                                <rect x="6" y="4" width="4.5" height="16" rx="1" />
+                                <rect x="13.5" y="4" width="4.5" height="16" rx="1" />
+                            </svg>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Settings portal */}
             {isSettingsOpen &&
                 playerElement &&
                 createPortal(
                     <div
-                        className="absolute bottom-14 right-3 z-30 w-64 rounded-xl border border-white/15 bg-[#181818]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-md antialiased"
-                        dir={isPersian ? "rtl" : "ltr"}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onTouchEnd={(event) => event.stopPropagation()}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-4 py-6 sm:absolute sm:inset-0 sm:flex sm:items-stretch sm:justify-end sm:bg-transparent sm:px-0 sm:py-0"
+                        onClick={() => {
+                            setIsSettingsOpen(false);
+                            setSettingsSection("main");
+                        }}
                     >
-                        <div className="mb-3 border-b border-white/15 pb-2 text-sm font-bold tracking-tight text-white">
-                            {isPersian ? "تنظیمات پخش" : "Playback settings"}
-                        </div>
+                        <div
+                            className="relative max-h-[min(70vh,34rem)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-white/15 bg-[#181818] p-3 font-sans text-white shadow-2xl backdrop-blur-md antialiased sm:absolute sm:bottom-[4.5rem] sm:right-3 sm:max-h-[calc(100%-5.5rem)] sm:w-[17rem] sm:p-3"
+                            onClick={(event) => event.stopPropagation()}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onTouchEnd={(event) => event.stopPropagation()}
+                        >
+                            <div className="sticky top-0 z-10 -mx-1 mb-3 flex items-center gap-2 border-b border-white/15 bg-[#181818] px-1 pb-2 text-sm font-bold text-white">
 
-                        <div className="mb-2 text-xs font-semibold text-white/80">
-                            {isPersian ? "سرعت پخش" : "Playback speed"}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                                <button
-                                    key={rate}
-                                    type="button"
-                                    onClick={() => handlePlaybackRateChange(rate)}
-                                    aria-pressed={playbackRate === rate}
-                                    className={`cursor-pointer rounded-lg border px-2 py-2 text-sm font-medium transition-colors duration-150 ${
-                                        playbackRate === rate
-                                            ? "border-white bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.3)] ring-1 ring-white/50"
-                                            : "border-white/15 bg-white/[0.07] text-white/90 hover:border-white/50 hover:bg-white/20"
-                                    }`}
-                                >
-                                    {rate}×
-                                    {rate === 1 && (
-                                        <span className="block text-[10px] font-medium">
-                                            {isPersian ? "عادی" : "Normal"}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mb-2 mt-4 text-xs font-semibold text-white/80">
-                            {isPersian ? "کیفیت ویدئو" : "Video quality"}
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            {[
-                                { value: "auto", label: isPersian ? "خودکار" : "Auto" },
-                                ...qualities.map((quality) => ({
-                                    value: String(quality.resolution),
-                                    label: quality.label,
-                                })),
-                            ].map((quality) => (
-                                <button
-                                    key={quality.value}
-                                    type="button"
-                                    onClick={() => handleQualityChange(quality.value)}
-                                    aria-pressed={selectedQuality === quality.value}
-                                    className={`cursor-pointer rounded-lg border px-3 py-2 text-start text-sm font-semibold transition-all duration-150 ${
-                                    selectedQuality === quality.value
-                                        ? "border-white bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.3)] ring-1 ring-white/50"
-                                        : "border-white/10 text-white/90 hover:border-white/40 hover:bg-white/15"
-                                    }`}
-                                >
-                                    {quality.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mb-2 mt-4 text-xs font-semibold text-white/80">
-                            {isPersian ? "زیرنویس" : "Subtitles"}
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <button
-                                type="button"
-                                onClick={() => handleSubtitleChange("off")}
-                                aria-pressed={selectedSubtitle === "off"}
-                                className={`cursor-pointer rounded-lg border px-3 py-2 text-start text-sm font-semibold transition-all duration-150 ${
-                                    selectedSubtitle === "off"
-                                        ? "border-white bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.3)] ring-1 ring-white/50"
-                                        : "border-white/10 text-white/90 hover:border-white/40 hover:bg-white/15"
-                                }`}
-                            >
-                                {isPersian ? "خاموش" : "Off"}
-                            </button>
-
-                            {subtitles.map((subtitle) => {
-                                const isSelected = selectedSubtitle === subtitle.language;
-
-                                return (
+                                {settingsSection !== "main" && (
                                     <button
-                                        key={subtitle.language}
                                         type="button"
-                                        onClick={() => handleSubtitleChange(subtitle.language)}
-                                        aria-pressed={isSelected}
-                                        className={`cursor-pointer rounded-lg border px-3 py-2 text-start text-sm font-semibold transition-all duration-150 ${
-                                            isSelected
-                                                ? "border-white bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.3)] ring-1 ring-white/50"
-                                                : "border-white/10 text-white/90 hover:border-white/40 hover:bg-white/15"
+                                        onClick={() => setSettingsSection("main")}
+                                        aria-label={isPersian ? "بازگشت" : "Go back"}
+                                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-xl transition-colors hover:bg-white/10 active:bg-white/20"
+                                    >
+                                        {isPersian ? "→" : "←"}
+                                    </button>
+                                )}
+
+                                <span className="flex-1">
+                                    {settingsSection === "main"
+                                        ? isPersian ? "تنظیمات" : "Settings"
+                                        : settingsSection === "quality"
+                                            ? isPersian ? "کیفیت" : "Quality"
+                                            : settingsSection === "speed"
+                                                ? isPersian ? "سرعت پخش" : "Playback speed"
+                                                : isPersian ? "زیرنویس" : "Subtitles"}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsSettingsOpen(false);
+                                        setSettingsSection("main");
+                                    }}
+                                    aria-label={isPersian ? "بستن تنظیمات" : "Close settings"}
+                                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white active:bg-white/20"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            {/* Main menu */}
+                            {settingsSection === "main" && (
+                                <div className="flex flex-col gap-1">
+                                    {/* Quality */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettingsSection("quality")}
+                                        dir={isPersian ? "rtl" : "ltr"}
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            flexWrap: "nowrap",
+                                            alignItems: "center",
+                                            width: "100%",
+                                        }}
+                                        className="cursor-pointer gap-2 rounded-lg px-2.5 py-2.5 text-start transition-colors hover:bg-white/10 active:bg-white/20 sm:gap-3 sm:px-3 sm:py-3"
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-5 w-5 shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M4 7h16M4 12h16M4 17h16" />
+                                            <circle cx="8" cy="7" r="2" />
+                                            <circle cx="15" cy="12" r="2" />
+                                            <circle cx="10" cy="17" r="2" />
+                                        </svg>
+
+                                        <span className="shrink-0 whitespace-nowrap text-sm font-medium">
+                                            {isPersian ? "کیفیت" : "Quality"}
+                                        </span>
+
+                                        <span className="min-w-0 flex-1 truncate text-end text-xs text-white/55">
+                                            {selectedQuality === "auto"
+                                                ? isPersian ? "خودکار" : "Auto"
+                                                : (qualities.find(
+                                                    (quality) =>
+                                                        String(quality.resolution) === selectedQuality
+                                                )?.label ?? `${selectedQuality}p`)}
+                                        </span>
+
+                                        <span className="text-lg text-white/45">
+                                            {isPersian ? "‹" : "›"}
+                                        </span>
+                                    </button>
+
+                                    {/* Playback speed */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettingsSection("speed")}
+                                        dir={isPersian ? "rtl" : "ltr"}
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            flexWrap: "nowrap",
+                                            alignItems: "center",
+                                            width: "100%",
+                                        }}
+                                        className="cursor-pointer gap-2 rounded-lg px-2.5 py-2.5 text-start transition-colors hover:bg-white/10 active:bg-white/20 sm:gap-3 sm:px-3 sm:py-3"
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-5 w-5 shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <circle cx="12" cy="12" r="9" />
+                                            <path d="M12 7v5l3 2" />
+                                        </svg>
+
+                                        <span className="shrink-0 whitespace-nowrap text-sm font-medium">
+                                            {isPersian ? "سرعت پخش" : "Playback speed"}
+                                        </span>
+
+                                        <span className="min-w-0 flex-1 truncate text-end text-xs text-white/55">
+                                            {playbackRate === 1
+                                                ? isPersian ? "عادی" : "Normal"
+                                                : `${playbackRate}×`}
+                                        </span>
+
+                                        <span className="shrink-0 text-lg text-white/45">
+                                            {isPersian ? "‹" : "›"}
+                                        </span>
+                                    </button>
+
+                                    {/* Subtitles */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettingsSection("subtitles")}
+                                        dir={isPersian ? "rtl" : "ltr"}
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            flexWrap: "nowrap",
+                                            alignItems: "center",
+                                            width: "100%",
+                                        }}
+                                        className="cursor-pointer gap-2 rounded-lg px-2.5 py-2.5 text-start transition-colors hover:bg-white/10 active:bg-white/20 sm:gap-3 sm:px-3 sm:py-3"
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-5 w-5 shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                                            <path d="M7 10h4M7 14h3M14 10h3M14 14h3" />
+                                        </svg>
+
+                                        <span className="shrink-0 whitespace-nowrap text-sm font-medium">
+                                            {isPersian ? "زیرنویس" : "Subtitles"}
+                                        </span>
+
+                                        <span className="min-w-0 flex-1 truncate text-end text-xs text-white/55">
+                                            {selectedSubtitle === "off"
+                                                ? isPersian ? "خاموش" : "Off"
+                                                : subtitles.find(
+                                                    (subtitle) =>
+                                                        subtitle.language === selectedSubtitle
+                                                )?.label ?? selectedSubtitle}
+                                        </span>
+
+                                        <span className="shrink-0 text-lg text-white/45">
+                                            {isPersian ? "‹" : "›"}
+                                        </span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Subtitles section */}
+                            {settingsSection === "subtitles" && (
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleSubtitleChange("off");
+                                            setSettingsSection("main");
+                                        }}
+                                        aria-pressed={selectedSubtitle === "off"}
+                                        className={`w-full cursor-pointer rounded-lg border px-3 py-3 text-start text-sm font-semibold transition-colors ${
+                                            selectedSubtitle === "off"
+                                                ? "border-white bg-white text-black"
+                                                : "border-white/10 bg-white/[0.05] text-white hover:bg-white/15"
                                         }`}
                                     >
-                                        {subtitle.label}
+                                        <span className="flex items-center justify-between">
+                                            {isPersian ? "خاموش" : "Off"}
+                                            {selectedSubtitle === "off" && "✓"}
+                                        </span>
                                     </button>
-                                );
-                            })}
 
-                            {subtitles.length === 0 && (
-                                <p className="px-3 py-2 text-xs leading-5 text-white/50">
-                                    {isPersian
-                                        ? "زیرنویسی برای این ویدئو موجود نیست."
-                                        : "No subtitles available."}
-                                </p>
+                                    {subtitles.map((subtitle) => {
+                                        const isSelected =
+                                            selectedSubtitle === subtitle.language;
+
+                                        return (
+                                            <button
+                                                key={subtitle.language}
+                                                type="button"
+                                                onClick={() => {
+                                                    handleSubtitleChange(subtitle.language);
+                                                    setSettingsSection("main");
+                                                }}
+                                                aria-pressed={isSelected}
+                                                className={`w-full cursor-pointer rounded-lg border px-3 py-3 text-start text-sm font-semibold transition-colors ${
+                                                    isSelected
+                                                        ? "border-white bg-white text-black"
+                                                        : "border-white/10 bg-white/[0.05] text-white hover:bg-white/15"
+                                                }`}
+                                            >
+                                                <span className="flex items-center justify-between">
+                                                    {subtitle.label}
+                                                    {isSelected && "✓"}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+
+                                    {subtitles.length === 0 && (
+                                        <p className="px-3 py-3 text-xs leading-5 text-white/50">
+                                            {isPersian
+                                                ? "زیرنویسی برای این ویدئو موجود نیست."
+                                                : "No subtitles available."}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Playback speed section */}
+                            {settingsSection === "speed" && (
+                                <div className="grid grid-cols-3 gap-2">
+
+                                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                                        <button
+                                            key={rate}
+                                            type="button"
+                                            onClick={() => {
+                                                handlePlaybackRateChange(rate);
+                                                setSettingsSection("main");
+                                            }}
+                                            aria-pressed={playbackRate === rate}
+                                            className={`cursor-pointer rounded-lg border px-2 py-3 text-sm font-medium transition-colors ${
+                                                playbackRate === rate
+                                                    ? "border-white bg-white text-black"
+                                                    : "border-white/15 bg-white/[0.07] text-white/90 hover:bg-white/20"
+                                            }`}
+                                        >
+                                            {rate}×
+
+                                            {rate === 1 && (
+                                                <span className="block text-[10px] font-medium">
+                                                    {isPersian ? "عادی" : "Normal"}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Video quality section */}
+                            {settingsSection === "quality" && (
+                                <div className="flex flex-col gap-2">
+                                    {[
+                                        {
+                                            value: "auto",
+                                            label: isPersian ? "خودکار" : "Auto",
+                                        },
+                                        ...qualities.map((quality) => ({
+                                            value: String(quality.resolution),
+                                            label: quality.label,
+                                        })),
+                                    ].map((quality) => {
+                                        const isSelected =
+                                            selectedQuality === quality.value;
+
+                                        return (
+                                            <button
+                                                key={quality.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    handleQualityChange(quality.value);
+                                                    setSettingsSection("main");
+                                                }}
+                                                aria-pressed={isSelected}
+                                                className={`w-full cursor-pointer rounded-lg border px-3 py-3 text-start text-sm font-semibold transition-colors ${
+                                                    isSelected
+                                                        ? "border-white bg-white text-black"
+                                                        : "border-white/10 bg-white/[0.05] text-white hover:bg-white/15"
+                                                }`}
+                                            >
+                                                <span className="flex items-center justify-between">
+                                                    {quality.label}
+                                                    {isSelected && "✓"}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
                     </div>,

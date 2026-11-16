@@ -2,7 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +22,7 @@ export default function useVideoUpload() {
     const { language } = useLanguage();
     const queryClient = useQueryClient();
     const t = translations[language].uploadVideo;
+
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [categoryId, setCategoryId] = useState("");
@@ -64,10 +70,12 @@ export default function useVideoUpload() {
         event.preventDefault();
         setError("");
 
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
+            localStorage.removeItem("username");
             setError(t.loginRequired);
+            router.replace("/login");
             return;
         }
 
@@ -99,6 +107,13 @@ export default function useVideoUpload() {
 
             const data = await response.json().catch(() => ({}));
 
+            if (response.status === 401) {
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
+                return;
+            }
+
             if (response.ok) {
                 await queryClient.invalidateQueries({
                     queryKey: ["homeVideos"],
@@ -107,7 +122,7 @@ export default function useVideoUpload() {
                 await queryClient.invalidateQueries({
                     queryKey: ["trendingVideos"],
                 });
-                
+
                 const params = new URLSearchParams({
                     id: String(data.id),
                     title: data.title || title,

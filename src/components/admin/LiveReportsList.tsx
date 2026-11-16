@@ -1,0 +1,550 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
+import { translations } from "@/i18n/translations";
+
+interface LiveStreamReport {
+    id: number;
+    live_id: number;
+    live_title: string;
+    channel_username: string;
+    reporter: string;
+    reason: string;
+    reason_display: string;
+    details: string;
+    status: string;
+    status_display: string;
+    created_at: string;
+    reviewed_at: string | null;
+}
+
+interface LiveReportsResponse {
+    reports: LiveStreamReport[];
+    pending_count: number;
+    reviewed_count: number;
+    dismissed_count: number;
+    action_taken_count: number;
+    total_count: number;
+    total_pages: number;
+    current_page: number;
+    error?: string;
+}
+
+type StatusFilter =
+    | "all"
+    | "pending"
+    | "reviewed"
+    | "dismissed"
+    | "action_taken";
+
+type ReportStatus = "reviewed" | "dismissed";
+type SortOrder = "newest" | "oldest";
+
+interface LiveReportsListProps {
+    isAdmin: boolean;
+}
+
+export default function LiveReportsList({
+    isAdmin,
+}: LiveReportsListProps) {
+    const { language, isPersian } = useLanguage();
+    const t = translations[language].admin;
+
+    const [reports, setReports] = useState<LiveStreamReport[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    const [statusFilter, setStatusFilter] =
+        useState<StatusFilter>("all");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+
+    const [pendingCount, setPendingCount] = useState(0);
+    const [reviewedCount, setReviewedCount] = useState(0);
+    const [dismissedCount, setDismissedCount] = useState(0);
+    const [actionTakenCount, setActionTakenCount] = useState(0);
+
+    const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const requestIdRef = useRef(0);
+
+    const isFa = isPersian;
+
+    const loadReports = useCallback(async () => {
+        if (!isAdmin) return;
+
+        const requestId = ++requestIdRef.current;
+
+        setLoading(true);
+        setError("");
+
+        try {
+            const token = await ensureAccessToken();
+
+            if (!token) {
+                throw new Error(
+                    isFa
+                        ? "لطفاً دوباره وارد حساب کاربری شو."
+                        : "Please log in again."
+                );
+            }
+
+            const params = new URLSearchParams({
+                page: String(currentPage),
+                page_size: "10",
+                status: statusFilter,
+                search: searchTerm.trim(),
+                ordering: sortOrder,
+            });
+
+            const response = await apiFetch(
+                `${API}/admin/live-reports/?${params.toString()}`
+            );
+
+            const data: LiveReportsResponse = await response.json();
+
+            if (requestId !== requestIdRef.current) return;
+
+            if (response.status === 401) {
+                clearAccessToken();
+                throw new Error(
+                    isFa
+                        ? "نشست شما منقضی شده است."
+                        : "Your session has expired."
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error ||
+                    (isFa
+                        ? "دریافت گزارش‌های لایو ناموفق بود."
+                        : "Failed to load live reports.")
+                );
+            }
+
+            setReports(data.reports);
+            setPendingCount(data.pending_count);
+            setReviewedCount(data.reviewed_count);
+            setDismissedCount(data.dismissed_count);
+            setActionTakenCount(data.action_taken_count);
+            setTotalCount(data.total_count);
+            setTotalPages(data.total_pages);
+            setCurrentPage(data.current_page);
+        } catch (requestError) {
+            if (requestId !== requestIdRef.current) return;
+
+            setError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : isFa
+                        ? "خطایی رخ داد."
+                        : "Something went wrong."
+            );
+        } finally {
+            if (requestId === requestIdRef.current) {
+                setLoading(false);
+            }
+        }
+    }, [
+        isAdmin,
+        currentPage,
+        statusFilter,
+        searchTerm,
+        sortOrder,
+        isFa,
+    ]);
+
+    useEffect(() => {
+        void loadReports();
+
+        return () => {
+            requestIdRef.current += 1;
+        };
+    }, [loadReports]);
+
+    const changeStatus = async (
+        reportId: number,
+        newStatus: ReportStatus
+    ) => {
+        if (updatingId !== null) return;
+
+        setUpdatingId(reportId);
+        setError("");
+
+        try {
+            const token = await ensureAccessToken();
+
+            if (!token) {
+                clearAccessToken();
+                throw new Error(
+                    isFa
+                        ? "لطفاً دوباره وارد حساب کاربری شو."
+                        : "Please log in again."
+                );
+            }
+
+            const response = await apiFetch(
+                `${API}/admin/live-reports/${reportId}/`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.status === 401) {
+                clearAccessToken();
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error ||
+                    (isFa
+                        ? "به‌روزرسانی وضعیت گزارش ناموفق بود."
+                        : "Failed to update report status.")
+                );
+            }
+
+            await loadReports();
+        } catch (requestError) {
+            setError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : isFa
+                        ? "خطایی رخ داد."
+                        : "Something went wrong."
+            );
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
+    const filters: {
+        label: string;
+        value: StatusFilter;
+        count: number;
+    }[] = [
+        {
+            label: t.allReports,
+            value: "all",
+            count: totalCount,
+        },
+        {
+            label: t.pending,
+            value: "pending",
+            count: pendingCount,
+        },
+        {
+            label: t.reviewed,
+            value: "reviewed",
+            count: reviewedCount,
+        },
+        {
+            label: t.dismissed,
+            value: "dismissed",
+            count: dismissedCount,
+        },
+        {
+            label: t.actionTaken,
+            value: "action_taken",
+            count: actionTakenCount,
+        },
+    ];
+
+    const statusLabels: Record<string, string> = {
+        pending: t.pending,
+        reviewed: t.reviewed,
+        dismissed: t.dismissed,
+        action_taken: t.actionTaken,
+    };
+
+    const formatDate = (value: string) =>
+        new Date(value).toLocaleString(
+            isPersian ? "fa-IR" : "en-US"
+        );
+
+    const formatNumber = (value: number) =>
+        value.toLocaleString(isPersian ? "fa-IR" : "en-US");
+
+    return (
+        <section
+            dir={isPersian ? "rtl" : "ltr"}
+            className="mt-8 rounded-xl border border-gray-200 bg-white p-5 dark:border-[#303030] dark:bg-[#181818] sm:p-6"
+        >
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 className="text-xl font-semibold">
+                        {isPersian
+                            ? "گزارش‌های پخش زنده"
+                            : "Live stream reports"}
+                    </h2>
+
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {isPersian
+                            ? "گزارش‌های مربوط به پخش زنده را جداگانه بررسی و مدیریت کن."
+                            : "Review and manage live stream reports separately."}
+                    </p>
+                </div>
+
+                <span className="rounded-full bg-red-100 px-3 py-1.5 text-sm font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                    {isPersian ? "در انتظار بررسی: " : "Pending: "}
+                    {formatNumber(pendingCount)}
+                </span>
+            </div>
+
+            <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setCurrentPage(1);
+                }}
+                placeholder={
+                    isPersian
+                        ? "جست‌وجوی عنوان لایو، کانال یا گزارش‌دهنده..."
+                        : "Search live title, channel or reporter..."
+                }
+                className="mb-5 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] dark:border-[#444444] dark:bg-[#181818] dark:text-white"
+            />
+
+            <div className="mb-6 flex flex-wrap gap-2">
+                {filters.map((filter) => (
+                    <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => {
+                            setStatusFilter(filter.value);
+                            setCurrentPage(1);
+                        }}
+                        aria-pressed={statusFilter === filter.value}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                            statusFilter === filter.value
+                                ? "bg-[var(--accent)] text-white"
+                                : "border border-gray-300 hover:bg-gray-100 dark:border-[#444444] dark:hover:bg-[#252525]"
+                        }`}
+                    >
+                        {filter.label} ({formatNumber(filter.count)})
+                    </button>
+                ))}
+            </div>
+
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <label
+                    htmlFor="live-report-sort"
+                    className="text-sm font-medium"
+                >
+                    {t.sortByDate}
+                </label>
+
+                <select
+                    id="live-report-sort"
+                    value={sortOrder}
+                    onChange={(event) => {
+                        setSortOrder(event.target.value as SortOrder);
+                        setCurrentPage(1);
+                    }}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-[#444444] dark:bg-[#181818] dark:text-white"
+                >
+                    <option value="newest">{t.newest}</option>
+                    <option value="oldest">{t.oldest}</option>
+                </select>
+            </div>
+
+            {loading ? (
+                <p className="py-8 text-center text-gray-500">
+                    {t.loadingReports}
+                </p>
+            ) : error ? (
+                <div
+                    role="alert"
+                    className="rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                >
+                    {error}
+                    <button
+                        type="button"
+                        onClick={() => void loadReports()}
+                        className="ms-3 font-semibold underline"
+                    >
+                        {isPersian ? "تلاش دوباره" : "Retry"}
+                    </button>
+                </div>
+            ) : reports.length === 0 ? (
+                <p className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    {isPersian
+                        ? "گزارشی برای نمایش وجود ندارد."
+                        : "No live reports found."}
+                </p>
+            ) : (
+                <div className="space-y-5">
+                    {reports.map((report) => {
+                        const statusStyle =
+                            report.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
+                                : report.status === "action_taken"
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+                                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+
+                        return (
+                            <article
+                                key={report.id}
+                                className="rounded-xl border border-gray-200 p-5 dark:border-[#303030]"
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <h3 className="font-semibold">
+                                        {isPersian ? "گزارش" : "Report"} #
+                                        {formatNumber(report.id)}
+                                    </h3>
+
+                                    <span
+                                        className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle}`}
+                                    >
+                                        {statusLabels[report.status] || report.status_display}
+                                    </span>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                                    <p>
+                                        <span className="text-gray-500">
+                                            {isPersian ? "عنوان لایو: " : "Live stream: "}
+                                        </span>
+                                        <Link
+                                            href={`/live/${report.live_id}`}
+                                            className="font-medium text-[var(--accent)] hover:underline"
+                                        >
+                                            {report.live_title}
+                                        </Link>
+                                    </p>
+
+                                    <p>
+                                        <span className="text-gray-500">
+                                            {isPersian ? "شناسه لایو: " : "Live ID: "}
+                                        </span>
+                                        {formatNumber(report.live_id)}
+                                    </p>
+
+                                    <p>
+                                        <span className="text-gray-500">
+                                            {isPersian ? "صاحب کانال: " : "Channel owner: "}
+                                        </span>
+                                        {report.channel_username}
+                                    </p>
+
+                                    <p>
+                                        <span className="text-gray-500">
+                                            {isPersian ? "گزارش‌دهنده: " : "Reported by: "}
+                                        </span>
+                                        {report.reporter}
+                                    </p>
+
+                                    <p>
+                                        <span className="text-gray-500">
+                                            {t.reason}:
+                                        </span>{" "}
+                                        {report.reason_display}
+                                    </p>
+                                </div>
+
+                                {report.details && (
+                                    <div className="mt-4">
+                                        <p className="text-sm font-medium">
+                                            {t.additionalDetails}
+                                        </p>
+                                        <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm dark:bg-[#222222]">
+                                            {report.details}
+                                        </p>
+                                    </div>
+                                )}
+
+                                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                                    {t.submitted} {formatDate(report.created_at)}
+                                </p>
+
+                                {report.reviewed_at && (
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        {t.reviewedAt} {formatDate(report.reviewed_at)}
+                                    </p>
+                                )}
+
+                                {report.status === "pending" && (
+                                    <div className="mt-5 flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            disabled={updatingId !== null}
+                                            onClick={() =>
+                                                void changeStatus(report.id, "reviewed")
+                                            }
+                                            className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {updatingId === report.id
+                                                ? t.updating
+                                                : t.markReviewed}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={updatingId !== null}
+                                            onClick={() =>
+                                                void changeStatus(report.id, "dismissed")
+                                            }
+                                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#444444] dark:hover:bg-[#252525]"
+                                        >
+                                            {t.dismissReport}
+                                        </button>
+                                    </div>
+                                )}
+                            </article>
+                        );
+                    })}
+                </div>
+            )}
+
+            {!loading && !error && totalCount > 0 && (
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-5 dark:border-[#303030]">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t.page} {formatNumber(currentPage)} {t.of}{" "}
+                        {formatNumber(totalPages)} ·{" "}
+                        {formatNumber(totalCount)} {t.reports}
+                    </p>
+
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            disabled={currentPage <= 1 || loading}
+                            onClick={() => setCurrentPage((page) => page - 1)}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#444444] dark:hover:bg-[#252525]"
+                        >
+                            {t.previous}
+                        </button>
+
+                        <button
+                            type="button"
+                            disabled={currentPage >= totalPages || loading}
+                            onClick={() => setCurrentPage((page) => page + 1)}
+                            className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {t.next}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+}

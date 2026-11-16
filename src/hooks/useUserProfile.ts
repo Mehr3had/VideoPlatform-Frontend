@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import { API, apiFetch, ensureAccessToken, clearAccessToken } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -94,7 +94,9 @@ export default function useUserProfile() {
     }, [userId]);
 
     const handleSubscribe = async () => {
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
             window.alert(t.loginRequired);
             return;
         }
@@ -110,6 +112,7 @@ export default function useUserProfile() {
                 .catch(() => ({}));
 
             if (response.status === 401) {
+                clearAccessToken();
                 window.alert(t.loginRequired);
                 return;
             }
@@ -130,10 +133,10 @@ export default function useUserProfile() {
             setProfile((previousProfile) =>
                 previousProfile
                     ? {
-                          ...previousProfile,
-                          is_subscribed: data.subscribed!,
-                          subscribers_count: data.subscribers_count!,
-                      }
+                        ...previousProfile,
+                        is_subscribed: data.subscribed!,
+                        subscribers_count: data.subscribers_count!,
+                    }
                     : previousProfile
             );
         } catch (error) {

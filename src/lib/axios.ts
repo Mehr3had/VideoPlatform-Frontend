@@ -3,28 +3,23 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-const API_URL = `${API_BASE_URL}/videos/api`;
+import {
+  API,
+  getAccessToken,
+  refreshAccessToken,
+} from "@/lib/api";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-interface RefreshResponse {
-  access?: string;
-}
-
 export const axiosClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-let refreshPromise: Promise<string | null> | null = null;
 
 function getCurrentLanguage(): string {
   if (typeof window === "undefined") {
@@ -34,76 +29,64 @@ function getCurrentLanguage(): string {
   return localStorage.getItem("language") === "en" ? "en" : "fa";
 }
 
-function getRefreshedAccessToken(): Promise<string | null> {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        const response = await axios.post<RefreshResponse>(
-          `${API_URL}/refresh/`,
-          {},
-          {
-            withCredentials: true,
-            headers: {
-              "Accept-Language": getCurrentLanguage(),
-            },
-          }
-        );
-
-        const accessToken = response.data.access;
-
-        if (!accessToken) {
-          localStorage.removeItem("accessToken");
-          return null;
-        }
-
-        localStorage.setItem("accessToken", accessToken);
-
-        return accessToken;
-      } catch {
-        localStorage.removeItem("accessToken");
-        return null;
-      }
-    })().finally(() => {
-      refreshPromise = null;
-    });
-  }
-
-  return refreshPromise;
-}
-
+// Attach the shared in-memory access token to every request.
 axiosClient.interceptors.request.use((config) => {
+  if (
+    typeof FormData !== "undefined" &&
+    config.data instanceof FormData
+  ) {
+    config.headers.delete("Content-Type");
+  }
   config.headers.set("Accept-Language", getCurrentLanguage());
 
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
+  const token = getAccessToken();
 
-    if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
-    }
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    config.headers.delete("Authorization");
   }
 
   return config;
 });
 
+// Use the shared refresh mechanism when a request receives 401.
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest =
       error.config as RetryableRequestConfig | undefined;
 
+    const requestUrl = originalRequest?.url ?? "";
+
     if (
       error.response?.status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      originalRequest.url?.includes("/login/") ||
-      originalRequest.url?.includes("/refresh/")
+      requestUrl.includes("/login/") ||
+      requestUrl.includes("/refresh/") ||
+      requestUrl.includes("/logout/")
     ) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
-    const accessToken = await getRefreshedAccessToken();
+    const authorization = originalRequest.headers.get("Authorization");
+
+    const tokenUsed =
+      typeof authorization === "string" &&
+      authorization.startsWith("Bearer ")
+        ? authorization.slice(7)
+        : null;
+
+    // Reuse a token refreshed by another request when available.
+    const currentToken = getAccessToken();
+
+    const accessToken =
+      currentToken && currentToken !== tokenUsed
+        ? currentToken
+        : await refreshAccessToken();
 
     if (!accessToken) {
       return Promise.reject(error);

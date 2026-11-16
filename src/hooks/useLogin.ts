@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import { API, apiFetch, setAccessToken } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -41,8 +42,20 @@ export default function useLogin() {
                 return;
             }
 
-            localStorage.setItem("accessToken", data.access);
+            if (!data.access) {
+                setError(t.connectionError);
+                return;
+            }
+
+            // Store the access token in memory only.
+            setAccessToken(data.access);
+
+            // Remove tokens left by the previous storage strategy.
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+
             localStorage.setItem("username", data.username);
+
             router.push("/");
         } catch (error) {
             console.error("Login error:", error);

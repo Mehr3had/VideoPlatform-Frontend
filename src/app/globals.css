@@ -10,6 +10,9 @@
   --accent: #8b5cf6;
   --accent-hover: #7c3aed;
   --accent-foreground: #ffffff;
+
+  /* Question comment color */
+  --question-comment-color: var(--accent);
 }
 
 html.dark {
@@ -182,4 +185,187 @@ body {
 .video-js .vjs-duration,
 .video-js .vjs-remaining-time {
     display: none !important;
+}
+
+/* Responsive Video Player */
+
+.video-js {
+    width: 100%;
+    max-width: 100%;
+}
+
+.video-js .vjs-control-bar {
+    font-size: 12px;
+}
+
+/* Mobile Video.js Controls */
+@media (max-width: 639px) {
+
+    /* Control bar */
+    .video-js .vjs-control-bar {
+        height: 3.2em;
+        font-size: 9px;
+        padding: 0 3px;
+        gap: 0;
+        align-items: center;
+    }
+
+    /* Compact visible controls - do not change display */
+    .video-js .vjs-control-bar .vjs-control:not(.vjs-progress-control) {
+        flex: 0 0 2.5em !important;
+        width: 2.5em !important;
+        min-width: 0 !important;
+        max-width: 2.5em !important;
+        height: 100%;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Keep default Video.js button alignment */
+    .video-js .vjs-control-bar .vjs-button {
+        height: 100%;
+        padding: 0 !important;
+        line-height: 2.5em;
+    }
+
+    .video-js .vjs-control-bar .vjs-button .vjs-icon-placeholder::before {
+        font-size: 1.5em;
+        line-height: 2.5em;
+    }
+
+    /* Skip buttons */
+    .video-js .vjs-control-bar .vjs-skip-backward,
+    .video-js .vjs-control-bar .vjs-skip-forward {
+        flex: 0 0 2.5em !important;
+        width: 2.5em !important;
+        height: 100%;
+    }
+
+    .video-js .vjs-skip-backward .vjs-icon-placeholder,
+    .video-js .vjs-skip-forward .vjs-icon-placeholder {
+        height: 100%;
+    }
+
+    .video-js .vjs-skip-backward .vjs-icon-placeholder svg,
+    .video-js .vjs-skip-forward .vjs-icon-placeholder svg {
+        width: 1.5em;
+        height: 1.5em;
+    }
+
+    /* Time display */
+    .video-js .vjs-control-bar .vjs-time-display-button.vjs-button {
+        flex: 0 0 64px !important;
+        width: 64px !important;
+        min-width: 64px !important;
+        max-width: 64px !important;
+        height: 100%;
+        padding: 0 !important;
+    }
+    .video-js .vjs-control-bar .vjs-progress-control {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
+    }
+
+    .video-js .vjs-time-display-button .vjs-time-display-text {
+        font-size: 10px;
+        line-height: normal;
+    }
+
+    /* Progress bar: same row as time display and skip buttons */
+    .video-js .vjs-control-bar .vjs-progress-control {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+
+        flex: 1 1 35px !important;
+        width: auto !important;
+        min-width: 35px !important;
+        max-width: none !important;
+
+        height: 100%;
+        padding: 0 3px !important;
+        margin: 0 !important;
+    }
+
+    .video-js .vjs-control-bar .vjs-progress-holder {
+        height: 0.35em;
+        margin: 0;
+    }
+
+    /* Big play button */
+    .video-js .vjs-big-play-button {
+        width: 2em;
+        height: 2em;
+        line-height: 2em;
+        margin-top: -1em;
+        margin-left: -1em;
+    }
+
+    /* Align Play, Volume, PiP and Fullscreen */
+    .video-js .vjs-control-bar .vjs-play-control,
+    .video-js .vjs-control-bar .vjs-volume-panel .vjs-mute-control,
+    .video-js .vjs-control-bar .vjs-picture-in-picture-control,
+    .video-js .vjs-control-bar .vjs-fullscreen-control {
+        transform: translateY(-4px);
+    }
+
+    /* Reduce gap between time display and progress bar */
+    .video-js .vjs-control-bar .vjs-time-display-button {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .video-js .vjs-control-bar .vjs-progress-control {
+        padding-left: 0 !important;
+        padding-right: 1px !important;
+    }
+}
+
+/* Hide Video.js settings button on mobile */
+@media (max-width: 639px) {
+    .video-js .vjs-desktop-settings-button {
+        display: none !important;
+    }
+}
+
+/* Hide mobile header on desktop */
+@media (min-width: 640px) {
+    .mobile-player-header {
+        display: none !important;
+    }
+}
+
+/* Hide duplicate native browser Picture-in-Picture button */
+.video-js video::-webkit-media-controls-picture-in-picture-button {
+    display: none !important;
+}
+
+/* Playback feedback animation */
+
+@keyframes playback-feedback-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+
+    15% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.12);
+    }
+}
+
+.playback-feedback-icon {
+    animation: playback-feedback-pop 600ms ease-out forwards;
 }

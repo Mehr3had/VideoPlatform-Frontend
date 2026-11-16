@@ -2,11 +2,16 @@
 
 import { useState, useRef } from "react";
 import { useVideoDetail } from "@/hooks/useVideoDetail";
-import CommentItem from "@/components/comments/CommentItem";
+import CommentItem, {
+    CommentContent,
+} from "@/components/comments/CommentItem";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 import VideoPlayer from "@/components/videos/VideoPlayer";
+import { PISHI_STICKERS } from "@/lib/stickers";
+import ConfirmDeleteComment from "@/components/comments/ConfirmDeleteComment";
+import CommentErrorDialog from "@/components/comments/CommentErrorDialog";
 
 export default function VideoDetailPage() {
     const { language, isPersian } = useLanguage();
@@ -24,6 +29,12 @@ export default function VideoDetailPage() {
         comments,
         commentText,
         setCommentText,
+        commentError,
+        clearCommentError,
+        isQuestion,
+        setIsQuestion,
+        spoilerRanges,
+        setSpoilerRanges,
         submittingComment,
         reactingCommentIds,
         replyingTo,
@@ -44,10 +55,39 @@ export default function VideoDetailPage() {
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const [editingCommentText, setEditingCommentText] = useState("");
+    const [editingCommentIsQuestion, setEditingCommentIsQuestion] =
+        useState(false);
+    const [editingCommentSpoilerRanges, setEditingCommentSpoilerRanges] =
+        useState<[number, number][]>([]);
+    const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
+    const [isDeletingComment, setIsDeletingComment] = useState(false);
     const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
     const [reportingCommentId, setReportingCommentId] = useState<number | null>(null);
     const [reportReason, setReportReason] = useState("spam");
     const [reportDetails, setReportDetails] = useState("");
+    const [showStickerPicker, setShowStickerPicker] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    const handleConfirmCommentDelete = async () => {
+        if (commentToDelete === null || isDeletingComment) return;
+
+        try {
+            setIsDeletingComment(true);
+
+            const deleted = await handleDeleteComment(
+                commentToDelete,
+                editingCommentId,
+                setEditingCommentId,
+                setEditingCommentText
+            );
+
+            if (deleted) {
+                setCommentToDelete(null);
+            }
+        } finally {
+            setIsDeletingComment(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -56,7 +96,7 @@ export default function VideoDetailPage() {
                 className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]"
             >
                 <Navbar />
-                <div className="mx-auto max-w-5xl px-8 py-10 text-gray-700 dark:text-gray-300">
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 text-gray-700 dark:text-gray-300">
                     {t.loading}
                 </div>
             </main>
@@ -70,7 +110,7 @@ export default function VideoDetailPage() {
                 className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]"
             >
                 <Navbar />
-                <div className="mx-auto max-w-5xl px-8 py-10 text-gray-700 dark:text-gray-300">
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 text-gray-700 dark:text-gray-300">
                     {error === "loadFailed"
                         ? t.loadFailed
                         : error ?? t.videoNotFound}
@@ -129,6 +169,45 @@ export default function VideoDetailPage() {
         });
     };
 
+    const handleSpoilerSelection = () => {
+        const textarea = commentTextareaRef.current;
+
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        // The user must select some text first.
+        if (start === end) return;
+
+        const ranges: [number, number][] = [
+            ...spoilerRanges,
+            [start, end],
+        ];
+
+        // Sort ranges by their starting position.
+        ranges.sort((a, b) => a[0] - b[0]);
+
+        // Merge overlapping or adjacent ranges.
+        const mergedRanges: [number, number][] = [];
+
+        for (const [rangeStart, rangeEnd] of ranges) {
+            const lastRange = mergedRanges[mergedRanges.length - 1];
+
+            if (lastRange && rangeStart <= lastRange[1]) {
+                lastRange[1] = Math.max(lastRange[1], rangeEnd);
+            } else {
+                mergedRanges.push([rangeStart, rangeEnd]);
+            }
+        }
+
+        setSpoilerRanges(mergedRanges);
+
+        // Keep the textarea focused and preserve the selection.
+        textarea.focus({ preventScroll: true });
+        textarea.setSelectionRange(start, end);
+    };
+
     return (
         <main
             dir={isPersian ? "rtl" : "ltr"}
@@ -136,16 +215,18 @@ export default function VideoDetailPage() {
         >
             <Navbar />
 
-            <section className="mx-auto max-w-5xl px-8 py-10">
+            <section className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
                 <VideoPlayer
                     videoId={video.id}
                     src={video.video_file}
+                    hlsSrc={video.hls_url}
                     poster={video.thumbnail}
+                    title={video.title}
                     subtitles={video.subtitles}
                     qualities={video.qualities}
                 />
 
-                <h1 className="mt-6 text-start text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <h1 className="mt-4 text-start text-xl font-bold leading-snug text-gray-900 dark:text-gray-100 sm:mt-6 sm:text-2xl lg:text-3xl">
                     {video.title}
                 </h1>
 
@@ -215,7 +296,7 @@ export default function VideoDetailPage() {
                     </p>
                 )}
 
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
                     <button
                         onClick={() => handleReaction("like")}
                         className={`rounded-lg px-5 py-2 font-medium transition ${
@@ -247,22 +328,26 @@ export default function VideoDetailPage() {
                             );
                             alert(t.linkCopied);
                         }}
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
+                        className={`rounded-lg border border-gray-300 bg-white py-2 font-medium text-gray-700 whitespace-nowrap transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030] ${
+                            isPersian
+                                ? "px-2.5 text-xs sm:px-5 sm:text-base"
+                                : "px-5"
+                        }`}
                     >
                         🔗 {t.share}
                     </button>
                 </div>
             </section>
 
-            <section className="mx-auto mt-10 max-w-5xl px-8 pb-10">
-                <h2 className="mb-5 text-start text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <section className="mx-auto mt-6 w-full max-w-5xl px-3 pb-8 sm:mt-10 sm:px-6 sm:pb-10 lg:px-8">
+                <h2 className="mb-4 text-start text-xl font-bold text-gray-900 dark:text-gray-100 sm:mb-5 sm:text-2xl">
                     {t.comments}
                 </h2>
 
                 <form
                     ref={commentFormRef}
                     onSubmit={handleCommentSubmit}
-                    className="mb-8 rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818]"
+                    className="mb-8 min-w-0 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-[#303030] dark:bg-[#181818]"
                 >
                     {replyingTo !== null && (
                         <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-950/30">
@@ -292,39 +377,6 @@ export default function VideoDetailPage() {
                         {replyingTo !== null ? t.writeReply : t.leaveComment}
                     </label>
 
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                        {[
-                            "😀",
-                            "😂",
-                            "😍",
-                            "❤️",
-                            "🔥",
-                            "👍",
-                            "😎",
-                            "😭",
-                            "🎮",
-                            "👏",
-                            "💩",
-                        ].map((emoji) => (
-                            <button
-                                key={emoji}
-                                type="button"
-                                onClick={() =>
-                                    insertEmoji(
-                                        emoji,
-                                        commentTextareaRef.current,
-                                        commentText,
-                                        setCommentText
-                                    )
-                                }
-                                aria-label={`${t.insertEmoji} ${emoji}`}
-                                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-lg transition hover:scale-110 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
-                            >
-                                {emoji}
-                            </button>
-                        ))}
-                    </div>
-
                     <textarea
                         ref={commentTextareaRef}
                         id="comment"
@@ -338,6 +390,164 @@ export default function VideoDetailPage() {
                         className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 text-start text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-700 focus:ring-1 focus:ring-red-700 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500"
                         rows={3}
                     />
+
+                    <div className="mt-2 flex items-center gap-2">
+                        {/* Emoji Picker */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowEmojiPicker(!showEmojiPicker);
+                                    setShowStickerPicker(false);
+                                }}
+                                aria-label={t.insertEmoji}
+                                aria-expanded={showEmojiPicker}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-base transition hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                            >
+                                😀
+                            </button>
+
+                            {showEmojiPicker && (
+                                <div className="absolute start-0 top-full z-30 mb-2 grid max-h-[40vh] w-[min(14rem,calc(100vw-2rem))] grid-cols-4 gap-1.5 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-[#404040] dark:bg-[#202020] sm:w-60 sm:gap-2 sm:p-3">
+                                    {[
+                                        "😀", "😂", "😍", "❤️", "🔥", "👍",
+                                        "😎", "😭", "🎮", "👏", "💩",
+                                    ].map((emoji) => (
+                                        <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => {
+                                                insertEmoji(
+                                                    emoji,
+                                                    commentTextareaRef.current,
+                                                    commentText,
+                                                    setCommentText
+                                                );
+                                                setShowEmojiPicker(false);
+                                            }}
+                                            aria-label={`${t.insertEmoji} ${emoji}`}
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-xl transition active:scale-95 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030] sm:h-11 sm:w-11 sm:text-2xl"
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sticker Picker */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowStickerPicker(!showStickerPicker);
+                                    setShowEmojiPicker(false);
+                                }}
+                                aria-label="Open Pishi stickers"
+                                aria-expanded={showStickerPicker}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-base transition hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                            >
+                                😺
+                            </button>
+
+                            {showStickerPicker && (
+                                <div className="absolute start-0 top-full z-30 mt-2 max-h-[40vh] w-[min(16rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-[#404040] dark:bg-[#202020] sm:w-72 sm:p-3">
+                                    <p className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-300 sm:mb-3 sm:text-sm">
+                                        پک پیشی 🐱
+                                    </p>
+
+                                    <div className="grid grid-cols-5 gap-1 sm:gap-2">
+                                        {PISHI_STICKERS.map((sticker) => (
+                                            <button
+                                                key={sticker.code}
+                                                type="button"
+                                                onClick={() => {
+                                                    insertEmoji(
+                                                        sticker.code,
+                                                        commentTextareaRef.current,
+                                                        commentText,
+                                                        setCommentText
+                                                    );
+                                                    setShowStickerPicker(false);
+                                                }}
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-1 transition active:scale-95 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030] sm:h-12 sm:w-12"
+                                            >
+                                                <img
+                                                    src={sticker.src}
+                                                    alt={sticker.code}
+                                                    className="h-full w-full object-contain"
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Question Button */}
+                        <button
+                            type="button"
+                            onClick={() => setIsQuestion(!isQuestion)}
+                            aria-label={t.markAsQuestion}
+                            aria-pressed={isQuestion}
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-lg font-bold transition ${
+                                isQuestion
+                                    ? "text-white"
+                                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
+                            }`}
+                            style={
+                                isQuestion
+                                    ? {
+                                        backgroundColor: "var(--accent)",
+                                        borderColor: "var(--accent)",
+                                    }
+                                    : undefined
+                            }
+                        >
+                            ?
+                        </button>
+
+                        {/* Spoiler Button */}
+                        <button
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={handleSpoilerSelection}
+                            aria-label={t.markSelectedAsSpoiler}
+                            title={t.selectTextFirst}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-base transition hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                        >
+                            🙈
+                        </button>
+                    </div>
+
+                    {commentText.trim() && (
+                        <div className="mt-4 rounded-lg border border-dashed border-gray-300 p-3 dark:border-[#404040]">
+                            <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                {t.preview}
+                            </p>
+
+                            {isQuestion && (
+                                <div
+                                    className="mb-2 text-xs font-bold"
+                                    style={{
+                                        color: "var(--question-comment-color, #dc2626)",
+                                    }}
+                                >
+                                    ? {t.question}
+                                </div>
+                            )}
+
+                            <CommentContent
+                                text={commentText}
+                                spoilerRanges={spoilerRanges}
+                                onRemoveSpoilerRange={(rangeIndex) => {
+                                    setSpoilerRanges((previous) =>
+                                        previous.filter((_, index) => index !== rangeIndex)
+                                    );
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span
@@ -409,6 +619,10 @@ export default function VideoDetailPage() {
                                 setEditingCommentId={setEditingCommentId}
                                 editingCommentText={editingCommentText}
                                 setEditingCommentText={setEditingCommentText}
+                                editingCommentIsQuestion={editingCommentIsQuestion}
+                                setEditingCommentIsQuestion={setEditingCommentIsQuestion}
+                                editingCommentSpoilerRanges={editingCommentSpoilerRanges}
+                                setEditingCommentSpoilerRanges={setEditingCommentSpoilerRanges}
                                 editingTextareaRef={editingTextareaRef}
                                 reportingCommentId={reportingCommentId}
                                 setReportingCommentId={setReportingCommentId}
@@ -418,17 +632,14 @@ export default function VideoDetailPage() {
                                 setReportDetails={setReportDetails}
                                 submittingReport={submittingReport}
                                 onDeleteComment={(commentId) =>
-                                    handleDeleteComment(
-                                        commentId,
-                                        editingCommentId,
-                                        setEditingCommentId,
-                                        setEditingCommentText
-                                    )
+                                    setCommentToDelete(commentId)
                                 }
-                                onEditComment={(commentId, text) =>
+                                onEditComment={(commentId, text, isQuestion, spoilerRanges) =>
                                     handleEditComment(
                                         commentId,
                                         text,
+                                        isQuestion,
+                                        spoilerRanges,
                                         setEditingCommentId,
                                         setEditingCommentText
                                     )
@@ -451,6 +662,17 @@ export default function VideoDetailPage() {
                         ))}
                 </div>
             </section>
+            <ConfirmDeleteComment
+                isOpen={commentToDelete !== null && commentError === null}
+                isLoading={isDeletingComment}
+                onConfirm={handleConfirmCommentDelete}
+                onCancel={() => setCommentToDelete(null)}
+            />
+            <CommentErrorDialog
+                isOpen={commentError !== null}
+                message={commentError ?? ""}
+                onClose={clearCommentError}
+            />
         </main>
     );
 }

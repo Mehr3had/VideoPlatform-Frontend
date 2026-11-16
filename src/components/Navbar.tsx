@@ -74,8 +74,8 @@ export default function Navbar() {
         };
     }, []);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         setUnreadCount(0);
         setMenuOpen(false);
     };

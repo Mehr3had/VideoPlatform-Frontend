@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import { API, apiFetch, ensureAccessToken, clearAccessToken, getCsrfHeaders } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -35,9 +35,12 @@ export default function useAccountSettings() {
     const [passwordError, setPasswordError] = useState(false);
     const [deleteError, setDeleteError] = useState(false);
 
-    const requireLogin = () => {
-        if (!localStorage.getItem("accessToken")) {
-            router.push("/login");
+    const requireLogin = async () => {
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            localStorage.removeItem("username");
+            router.replace("/login");
             return false;
         }
 
@@ -49,7 +52,7 @@ export default function useAccountSettings() {
     ) => {
         event.preventDefault();
 
-        if (!requireLogin()) return;
+        if (!(await requireLogin())) return;
 
         const trimmedUsername = newUsername.trim();
 
@@ -73,7 +76,9 @@ export default function useAccountSettings() {
             const data: ApiResponse = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                router.push("/login");
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
                 return;
             }
 
@@ -103,7 +108,7 @@ export default function useAccountSettings() {
     ) => {
         event.preventDefault();
 
-        if (!requireLogin()) return;
+        if (!(await requireLogin())) return;
 
         if (newPassword !== passwordConfirm) {
             setPasswordError(true);
@@ -129,7 +134,9 @@ export default function useAccountSettings() {
             const data: ApiResponse = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                router.push("/login");
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
                 return;
             }
 
@@ -157,7 +164,7 @@ export default function useAccountSettings() {
     ) => {
         event.preventDefault();
 
-        if (!requireLogin()) return;
+        if (!(await requireLogin())) return;
 
         setDeleteLoading(true);
         setDeleteMessage("");
@@ -173,7 +180,9 @@ export default function useAccountSettings() {
             const data: ApiResponse = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                router.push("/login");
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
                 return;
             }
 
@@ -182,6 +191,29 @@ export default function useAccountSettings() {
                 setDeleteMessage(data.error || t.deleteFailed);
                 return;
             }
+
+            // Revoke the refresh token and remove its cookie.
+            try {
+                const logoutResponse = await fetch(`${API}/logout/`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: await getCsrfHeaders(),
+                });
+
+                if (!logoutResponse.ok) {
+                    console.error(
+                        "Logout after account deletion failed:",
+                        logoutResponse.status
+                    );
+                }
+            } catch (logoutError) {
+                console.error(
+                    "Logout after account deletion request failed:",
+                    logoutError
+                );
+            }
+
+            clearAccessToken();
 
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");

@@ -31,10 +31,9 @@ export default function PasswordForm({
 }: PasswordFormProps) {
     const { language } = useLanguage();
     const t = translations[language].settings;
-    
     const inputClass =
     "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100";
-    
+
     return (
         <section className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818] sm:p-8">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">

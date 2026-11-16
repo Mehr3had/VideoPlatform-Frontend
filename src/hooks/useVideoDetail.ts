@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { API, BACKEND_URL, apiFetch } from "@/lib/api";
+import { API, apiFetch, ensureAccessToken } from "@/lib/api";
 import type { Video, Channel } from "@/types/video";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
@@ -14,6 +14,8 @@ export interface VideoComment {
     profile_image: string | null;
     text: string;
     is_removed: boolean;
+    is_question: boolean;
+    spoiler_ranges: [number, number][];
     parent_comment_id: number | null;
     created_at: string;
     likes_count: number;
@@ -38,7 +40,15 @@ export function useVideoDetail() {
     >(null);
     const [comments, setComments] = useState<VideoComment[]>([]);
     const [commentText, setCommentText] = useState("");
+    const [isQuestion, setIsQuestion] = useState(false);
+    const [spoilerRanges, setSpoilerRanges] = useState<
+        [number, number][]
+    >([]);
     const [submittingComment, setSubmittingComment] = useState(false);
+    const [commentError, setCommentError] = useState<string | null>(null);
+    const clearCommentError = useCallback(() => {
+        setCommentError(null);
+    }, []);
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -69,12 +79,13 @@ export function useVideoDetail() {
                 setDislikesCount(data.dislikes_count);
                 setUserReaction(null);
 
-                const token = localStorage.getItem("accessToken");
+                const token = await ensureAccessToken();
+                if (cancelled) return;
 
                 if (token) {
                     try {
                         const reactionResponse = await apiFetch(
-                            `${BACKEND_URL}/videos/${videoId}/react/`
+                            `${API}/videos/${videoId}/react/`
                         );
 
                         if (reactionResponse.ok) {
@@ -94,7 +105,7 @@ export function useVideoDetail() {
                 if (token) {
                     try {
                         const userResponse = await apiFetch(
-                            `${BACKEND_URL}/videos/api/me/`
+                            `${API}/me/`
                         );
 
                         if (userResponse.ok) {
@@ -135,8 +146,8 @@ export function useVideoDetail() {
                 });
 
                 const commentsResponse = token
-                    ? await apiFetch(`${BACKEND_URL}/videos/${videoId}/comments/`)
-                    : await fetch(`${BACKEND_URL}/videos/${videoId}/comments/`);
+                    ? await apiFetch(`${API}/videos/${videoId}/comments/`)
+                    : await fetch(`${API}/videos/${videoId}/comments/`);
 
                 if (commentsResponse.ok) {
                     const commentsData: VideoComment[] =
@@ -167,7 +178,7 @@ export function useVideoDetail() {
     }, [videoId]);
 
     const handleReaction = async (reaction: "like" | "dislike") => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
             alert(t.loginRequired);
@@ -176,7 +187,7 @@ export function useVideoDetail() {
 
         try {
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/${videoId}/react/`,
+                `${API}/videos/${videoId}/react/`,
                 {
                     method: "POST",
                     headers: {
@@ -203,7 +214,7 @@ export function useVideoDetail() {
     };
 
     const handleSubscribe = async () => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
             alert(t.loginRequired);
@@ -252,10 +263,10 @@ export function useVideoDetail() {
         commentId: number,
         reaction: "like" | "dislike"
     ) => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
-            alert(t.loginRequired);
+            setCommentError(t.loginRequired);
             return;
         }
 
@@ -330,7 +341,7 @@ export function useVideoDetail() {
 
         try {
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/${endpoint}/`,
+                `${API}/comments/${commentId}/${endpoint}/`,
                 {
                     method: "POST",
                 }
@@ -368,7 +379,7 @@ export function useVideoDetail() {
                 )
             );
 
-            alert(
+            setCommentError(
                 error instanceof Error ? error.message : t.generalError
             );
         } finally {
@@ -385,10 +396,10 @@ export function useVideoDetail() {
     ) => {
         e.preventDefault();
 
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
-            alert(t.loginRequired);
+            setCommentError(t.loginRequired);
             return;
         }
 
@@ -399,7 +410,7 @@ export function useVideoDetail() {
         }
 
         if (text.length > 1000) {
-            alert(t.commentTooLong);
+            setCommentError(t.commentTooLong);
             return;
         }
 
@@ -407,7 +418,7 @@ export function useVideoDetail() {
             setSubmittingComment(true);
 
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/${videoId}/comments/`,
+                `${API}/videos/${videoId}/comments/`,
                 {
                     method: "POST",
                     headers: {
@@ -415,6 +426,8 @@ export function useVideoDetail() {
                     },
                     body: JSON.stringify({
                         text,
+                        is_question: isQuestion,
+                        spoiler_ranges: spoilerRanges,
                         ...(replyingTo !== null && {
                             parent_comment_id: replyingTo,
                         }),
@@ -425,7 +438,7 @@ export function useVideoDetail() {
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.error || t.generalError);
+                setCommentError(data.error || t.generalError);
                 return;
             }
 
@@ -435,10 +448,12 @@ export function useVideoDetail() {
             ]);
 
             setCommentText("");
+            setIsQuestion(false);
+            setSpoilerRanges([]);
             setReplyingTo(null);
         } catch (error) {
             console.error("Comment error:", error);
-            alert(t.generalError);
+            setCommentError(t.generalError);
         } finally {
             setSubmittingComment(false);
         }
@@ -447,46 +462,57 @@ export function useVideoDetail() {
     const handleEditComment = async (
         commentId: number,
         editingCommentText: string,
+        isQuestion: boolean,
+        spoilerRanges: [number, number][],
         setEditingCommentId: (id: number | null) => void,
         setEditingCommentText: (text: string) => void
     ) => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
-            alert(t.loginRequired);
+            setCommentError(t.loginRequired);
             return;
         }
 
         const text = editingCommentText.trim();
 
         if (!text || text.length > 1000) {
-            alert(t.invalidCommentLength);
+            setCommentError(t.invalidCommentLength);
             return;
         }
 
         try {
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/edit/`,
+                `${API}/comments/${commentId}/edit/`,
                 {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ text }),
+                    body: JSON.stringify({
+                        text,
+                        is_question: isQuestion,
+                        spoiler_ranges: spoilerRanges,
+                    }),
                 }
             );
 
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.error || t.generalError);
+                setCommentError(data.error || t.generalError);
                 return;
             }
 
             setComments((previousComments) =>
                 previousComments.map((comment) =>
                     comment.id === commentId
-                        ? { ...comment, text: data.comment.text }
+                        ? {
+                            ...comment,
+                            text: data.comment.text,
+                            is_question: data.comment.is_question,
+                            spoiler_ranges: data.comment.spoiler_ranges,
+                        }
                         : comment
                 )
             );
@@ -495,7 +521,7 @@ export function useVideoDetail() {
             setEditingCommentText("");
         } catch (error) {
             console.error("Edit comment error:", error);
-            alert(t.generalError);
+            setCommentError(t.generalError);
         }
     };
 
@@ -504,21 +530,17 @@ export function useVideoDetail() {
         editingCommentId: number | null,
         setEditingCommentId: (id: number | null) => void,
         setEditingCommentText: (text: string) => void
-    ) => {
-        const confirmed = window.confirm(t.deleteConfirmation);
-
-        if (!confirmed) return;
-
-        const token = localStorage.getItem("accessToken");
+    ): Promise<boolean> => {
+        const token = await ensureAccessToken();
 
         if (!token) {
-            alert(t.loginRequired);
-            return;
+            setCommentError(t.loginRequired);
+            return false;
         }
 
         try {
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/delete/`,
+                `${API}/comments/${commentId}/delete/`,
                 {
                     method: "DELETE",
                 }
@@ -527,18 +549,16 @@ export function useVideoDetail() {
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
-                alert(data.error || t.generalError);
-                return;
+                setCommentError(data.error || t.generalError);
+                return false;
             }
 
             // Also remove replies belonging to the deleted comment.
             const deletedIds = new Set<number>([commentId]);
-
             let changed = true;
 
             while (changed) {
                 changed = false;
-
                 for (const comment of comments) {
                     if (
                         comment.parent_comment_id !== null &&
@@ -561,9 +581,12 @@ export function useVideoDetail() {
                 setEditingCommentId(null);
                 setEditingCommentText("");
             }
+
+            return true;
         } catch (error) {
             console.error("Delete comment error:", error);
-            alert(t.generalError);
+            setCommentError(t.generalError);
+            return false;
         }
     };
 
@@ -576,15 +599,15 @@ export function useVideoDetail() {
         setReportDetails: (details: string) => void,
         setEditingCommentId: (id: number | null) => void
     ) => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
-            alert(t.loginRequired);
+            setCommentError(t.loginRequired);
             return;
         }
 
         if (reportDetails.length > 500) {
-            alert(t.detailsTooLong);
+            setCommentError(t.detailsTooLong);
             return;
         }
 
@@ -592,7 +615,7 @@ export function useVideoDetail() {
             setSubmittingReport(true);
 
             const response = await apiFetch(
-                `${BACKEND_URL}/videos/api/comments/${commentId}/report/`,
+                `${API}/comments/${commentId}/report/`,
                 {
                     method: "POST",
                     headers: {
@@ -609,22 +632,21 @@ export function useVideoDetail() {
 
             if (!response.ok) {
                 if (response.status === 409) {
-                    alert(t.alreadyReported);
+                    setCommentError(t.alreadyReported);
                 } else {
-                    alert(data.error || t.reportFailed);
+                    setCommentError(data.error || t.reportFailed);
                 }
                 return;
             }
 
-            alert(t.reportSuccess);
-
+            setCommentError(t.reportSuccess);
             setReportingCommentId(null);
             setReportReason("spam");
             setReportDetails("");
             setEditingCommentId(null);
         } catch (error) {
             console.error("Report comment error:", error);
-            alert(t.generalError);
+            setCommentError(t.generalError);
         } finally {
             setSubmittingReport(false);
         }
@@ -642,6 +664,12 @@ export function useVideoDetail() {
         comments,
         commentText,
         setCommentText,
+        commentError,
+        clearCommentError,
+        isQuestion,
+        setIsQuestion,
+        spoilerRanges,
+        setSpoilerRanges,
         submittingComment,
         replyingTo,
         setReplyingTo,

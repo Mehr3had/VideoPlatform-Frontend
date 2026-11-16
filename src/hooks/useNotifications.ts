@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -19,14 +24,14 @@ export interface Notification {
 }
 
 export const notificationIcons: Record<string, string> = {
-    subscription: "👤",
-    video_like: "👍",
-    comment: "💬",
-    comment_reply: "↩️",
-    comment_like: "❤️",
-    activity_digest: "📬",
-    milestone: "🎉",
-    new_video: "🎬",
+    subscription: "ðŸ‘¤",
+    video_like: "ðŸ‘",
+    comment: "ðŸ’¬",
+    comment_reply: "â†©ï¸",
+    comment_like: "â",
+    activity_digest: "ðŸ“¬",
+    milestone: "ðŸŽ‰",
+    new_video: "ðŸŽ¬",
 };
 
 export default function useNotifications() {
@@ -51,11 +56,13 @@ export default function useNotifications() {
     };
 
     const loadNotifications = useCallback(async () => {
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
+            setNotifications([]);
             setError(t.loginRequired);
             setLoading(false);
+            syncUnreadCount([]);
             return;
         }
 
@@ -67,6 +74,7 @@ export default function useNotifications() {
             });
 
             if (response.status === 401) {
+                clearAccessToken();
                 setError(t.sessionExpired);
                 return;
             }
@@ -92,7 +100,9 @@ export default function useNotifications() {
     }, [loadNotifications]);
 
     const markAsRead = async (id: number) => {
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
             setError(t.loginToContinue);
             return;
         }
@@ -105,6 +115,11 @@ export default function useNotifications() {
                 `${API}/notifications/${id}/read/`,
                 { method: "PATCH" }
             );
+
+            if (response.status === 401) {
+                clearAccessToken();
+                throw new Error(t.sessionExpired);
+            }
 
             if (!response.ok) {
                 throw new Error("Failed to update notification.");
@@ -120,14 +135,18 @@ export default function useNotifications() {
             syncUnreadCount(updated);
         } catch (err) {
             console.error("Mark as read error:", err);
-            setError(t.markReadError);
+            setError(
+                err instanceof Error ? err.message : t.markReadError
+            );
         } finally {
             setUpdatingId(null);
         }
     };
 
     const markAllAsRead = async () => {
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
             setError(t.loginToContinue);
             return;
         }
@@ -140,6 +159,11 @@ export default function useNotifications() {
                 `${API}/notifications/read-all/`,
                 { method: "PATCH" }
             );
+
+            if (response.status === 401) {
+                clearAccessToken();
+                throw new Error(t.sessionExpired);
+            }
 
             if (!response.ok) {
                 throw new Error("Failed to mark all notifications as read.");
@@ -154,18 +178,18 @@ export default function useNotifications() {
             syncUnreadCount(updated);
         } catch (err) {
             console.error("Mark all as read error:", err);
-            setError(t.markAllError);
+            setError(
+                err instanceof Error ? err.message : t.markAllError
+            );
         } finally {
             setUpdatingId(null);
         }
     };
 
     const deleteAllNotifications = async () => {
-        if (!window.confirm(t.confirmDeleteAll)) {
-            return;
-        }
+        const token = await ensureAccessToken();
 
-        if (!localStorage.getItem("accessToken")) {
+        if (!token) {
             setError(t.loginToContinue);
             return;
         }
@@ -179,6 +203,11 @@ export default function useNotifications() {
                 { method: "DELETE" }
             );
 
+            if (response.status === 401) {
+                clearAccessToken();
+                throw new Error(t.sessionExpired);
+            }
+
             if (!response.ok) {
                 throw new Error("Failed to delete notifications.");
             }
@@ -187,18 +216,18 @@ export default function useNotifications() {
             syncUnreadCount([]);
         } catch (err) {
             console.error("Delete all notifications error:", err);
-            setError(t.deleteAllError);
+            setError(
+                err instanceof Error ? err.message : t.deleteAllError
+            );
         } finally {
             setUpdatingId(null);
         }
     };
 
     const deleteNotification = async (id: number) => {
-        if (!window.confirm(t.confirmDeleteOne)) {
-            return;
-        }
+        const token = await ensureAccessToken();
 
-        if (!localStorage.getItem("accessToken")) {
+        if (!token) {
             setError(t.loginToContinue);
             return;
         }
@@ -212,6 +241,11 @@ export default function useNotifications() {
                 { method: "DELETE" }
             );
 
+            if (response.status === 401) {
+                clearAccessToken();
+                throw new Error(t.sessionExpired);
+            }
+
             if (!response.ok) {
                 throw new Error("Failed to delete notification.");
             }
@@ -224,7 +258,9 @@ export default function useNotifications() {
             syncUnreadCount(updated);
         } catch (err) {
             console.error("Delete notification error:", err);
-            setError(t.deleteOneError);
+            setError(
+                err instanceof Error ? err.message : t.deleteOneError
+            );
         } finally {
             setUpdatingId(null);
         }

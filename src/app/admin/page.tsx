@@ -3,6 +3,8 @@
 import Link from "next/link";
 import AdminStats from "@/components/admin/AdminStats";
 import AdminReportsList from "@/components/admin/AdminReportsList";
+import LiveReportsList from "@/components/admin/LiveReportsList";
+import LiveChatReportsList from "@/components/admin/LiveChatReportsList";
 import useAdminReports from "@/hooks/useAdminReports";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
@@ -93,6 +95,8 @@ export default function AdminPage() {
                     onChangeStatus={admin.changeStatus}
                     onRemoveComment={admin.removeComment}
                 />
+                <LiveReportsList isAdmin={admin.isAdmin} />
+                <LiveChatReportsList isAdmin={admin.isAdmin} />
             </section>
         </main>
     );

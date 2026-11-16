@@ -24,7 +24,7 @@ export default function LoginForm() {
 
     const inputClass =
         "w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 dark:placeholder:text-gray-500";
-    
+
     return (
         <div
             dir={isPersian ? "rtl" : "ltr"}

@@ -119,12 +119,55 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
-                    <Link
-                        href="/dashboard/upload"
-                        className="accent-button inline-flex items-center justify-center rounded-lg px-5 py-3 font-medium"
-                    >
-                        {t.uploadVideo}
-                    </Link>
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                        <Link
+                            href="/dashboard/upload"
+                            className="accent-button inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 font-medium transition hover:brightness-110 sm:w-auto"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                            >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <path d="m17 8-5-5-5 5" />
+                                <path d="M12 3v12" />
+                            </svg>
+
+                            {t.uploadVideo}
+                        </Link>
+
+                        <Link
+                            href="/studio/live"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--accent)]/35 bg-[var(--accent)]/10 px-5 py-3 font-medium text-[var(--accent)] transition hover:bg-[var(--accent)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:w-auto"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                            >
+                                <circle cx="12" cy="12" r="2" />
+                                <path d="M16.2 7.8a6 6 0 0 1 0 8.4" />
+                                <path d="M7.8 16.2a6 6 0 0 1 0-8.4" />
+                                <path d="M19.1 4.9a10 10 0 0 1 0 14.2" />
+                                <path d="M4.9 19.1a10 10 0 0 1 0-14.2" />
+                            </svg>
+
+                            {isPersian ? "ساخت پخش زنده" : "Create Live Stream"}
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">

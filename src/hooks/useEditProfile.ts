@@ -2,7 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -15,6 +20,7 @@ export default function useEditProfile() {
     const router = useRouter();
     const { language } = useLanguage();
     const t = translations[language].editProfile;
+
     const [bio, setBio] = useState("");
     const [profileImage, setProfileImage] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
@@ -25,18 +31,25 @@ export default function useEditProfile() {
         let cancelled = false;
 
         const getProfile = async () => {
-            const token = localStorage.getItem("accessToken");
-
-            if (!token) {
-                router.push("/login");
-                return;
-            }
-
             try {
+                const token = await ensureAccessToken();
+
+                if (cancelled) return;
+
+                if (!token) {
+                    localStorage.removeItem("username");
+                    router.replace("/login");
+                    return;
+                }
+
                 const response = await apiFetch(`${API}/me/`);
 
+                if (cancelled) return;
+
                 if (response.status === 401) {
-                    router.push("/login");
+                    clearAccessToken();
+                    localStorage.removeItem("username");
+                    router.replace("/login");
                     return;
                 }
 
@@ -74,8 +87,11 @@ export default function useEditProfile() {
     ) => {
         event.preventDefault();
 
-        if (!localStorage.getItem("accessToken")) {
-            router.push("/login");
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            localStorage.removeItem("username");
+            router.replace("/login");
             return;
         }
 
@@ -98,7 +114,9 @@ export default function useEditProfile() {
             const data = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                router.push("/login");
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
                 return;
             }
 

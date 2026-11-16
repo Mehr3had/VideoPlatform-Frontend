@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 
 export interface AdminReport {
     id: number;
@@ -66,15 +71,22 @@ export default function useAdminReports() {
         let cancelled = false;
 
         const checkAdmin = async () => {
-            if (!localStorage.getItem("accessToken")) {
-                router.replace("/login");
-                return;
-            }
-
             try {
+                const token = await ensureAccessToken();
+
+                if (cancelled) return;
+
+                if (!token) {
+                    localStorage.removeItem("username");
+                    router.replace("/login");
+                    return;
+                }
+
                 const response = await apiFetch(`${API}/me/`);
 
                 if (!response.ok) {
+                    clearAccessToken();
+                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -86,12 +98,19 @@ export default function useAdminReports() {
                     return;
                 }
 
-                if (!cancelled) setIsAdmin(true);
+                if (!cancelled) {
+                    setIsAdmin(true);
+                }
             } catch (error) {
                 console.error("Admin verification error:", error);
-                router.replace("/");
+
+                if (!cancelled) {
+                    router.replace("/");
+                }
             } finally {
-                if (!cancelled) setChecking(false);
+                if (!cancelled) {
+                    setChecking(false);
+                }
             }
         };
 
@@ -105,9 +124,12 @@ export default function useAdminReports() {
     const loadReports = useCallback(async () => {
         if (!isAdmin) return;
 
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
             setReportsError("Please log in again.");
             setReportsLoading(false);
+            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -127,9 +149,12 @@ export default function useAdminReports() {
             const response = await apiFetch(
                 `${API}/admin/reports/?${params.toString()}`
             );
+
             const data: ReportsResponse = await response.json();
 
             if (response.status === 401) {
+                clearAccessToken();
+                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -177,7 +202,10 @@ export default function useAdminReports() {
     ) => {
         if (updatingId !== null) return;
 
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -201,6 +229,8 @@ export default function useAdminReports() {
             const data = await response.json();
 
             if (response.status === 401) {
+                clearAccessToken();
+                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -265,7 +295,10 @@ export default function useAdminReports() {
             return;
         }
 
-        if (!localStorage.getItem("accessToken")) {
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -282,6 +315,8 @@ export default function useAdminReports() {
             const data = await response.json();
 
             if (response.status === 401) {
+                clearAccessToken();
+                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }

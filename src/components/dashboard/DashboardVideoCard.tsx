@@ -80,7 +80,7 @@ export default function DashboardVideoCard({
                 <button
                     type="button"
                     onClick={() => onDelete(video.id)}
-                    className="flex flex-1 items-center justify-center rounded-lg border border-red-700 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 sm:flex-none sm:px-4 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-950"
+                    className="cursor-pointer flex flex-1 items-center justify-center rounded-lg border border-red-700 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 sm:flex-none sm:px-4 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-950"
                 >
                     {t.delete}
                 </button>

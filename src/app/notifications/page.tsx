@@ -5,7 +5,12 @@ import useNotifications from "@/hooks/useNotifications";
 import NotificationItem from "@/components/notifications/NotificationItem";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import { useState } from "react";
+import ConfirmDialog from "./success/page";
 
+type DeleteAction =
+    | { type: "one"; id: number }
+    | { type: "all" };
 export default function NotificationsPage() {
     const {
         notifications,
@@ -21,6 +26,23 @@ export default function NotificationsPage() {
 
     const { language, isPersian } = useLanguage();
     const t = translations[language].notifications;
+    const [deleteAction, setDeleteAction] =
+        useState<DeleteAction | null>(null);
+    const handleConfirmDelete = async () => {
+        const action = deleteAction;
+
+        if (!action) return;
+
+        try {
+            if (action.type === "all") {
+                await deleteAllNotifications();
+            } else {
+                await deleteNotification(action.id);
+            }
+        } finally {
+            setDeleteAction(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -86,7 +108,7 @@ export default function NotificationsPage() {
                     {notifications.length > 0 && (
                         <button
                             type="button"
-                            onClick={deleteAllNotifications}
+                            onClick={() => setDeleteAction({ type: "all" })}
                             disabled={updatingId !== null}
                             className="whitespace-nowrap rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
                         >
@@ -146,11 +168,46 @@ export default function NotificationsPage() {
                             notification={notification}
                             updatingId={updatingId}
                             onMarkAsRead={markAsRead}
-                            onDelete={deleteNotification}
+                            onDelete={(id) =>
+                                setDeleteAction({ type: "one", id })
+                            }
                         />
                     ))}
                 </div>
             )}
+            <ConfirmDialog
+                isOpen={deleteAction !== null}
+                title={
+                    deleteAction?.type === "all"
+                        ? isPersian
+                            ? "حذف همه اعلان‌ها؟"
+                            : "Delete all notifications?"
+                        : isPersian
+                            ? "حذف این اعلان؟"
+                            : "Delete this notification?"
+                }
+                message={
+                    deleteAction?.type === "all"
+                        ? t.confirmDeleteAll
+                        : t.confirmDeleteOne
+                }
+                confirmLabel={
+                    deleteAction?.type === "all"
+                        ? t.deleteAll
+                        : t.delete
+                }
+                cancelLabel={isPersian ? "انصراف" : "Cancel"}
+                loadingLabel={t.deleting}
+                isLoading={
+                    deleteAction?.type === "all"
+                        ? updatingId === -1
+                        : deleteAction
+                            ? updatingId === deleteAction.id
+                            : false
+                }
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteAction(null)}
+            />
         </main>
     );
 }

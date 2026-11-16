@@ -14,6 +14,18 @@ interface Video {
     category_name?: string | null;
 }
 
+export interface ActiveLiveStream {
+    id: number;
+    title: string;
+    description: string;
+    thumbnail: string | null;
+    owner: {
+        id: number;
+        username: string;
+    };
+    started_at: string | null;
+}
+
 interface Category {
     id: number;
     name: string;
@@ -70,12 +82,24 @@ export default function useHomeVideos() {
         staleTime: 60 * 1000,
     });
 
+    const activeLiveStreamsQuery = useQuery({
+        queryKey: ["activeLiveStreams"],
+        queryFn: async () => {
+            const response = await axiosClient.get<ActiveLiveStream[]>(
+                "/live/active/"
+            );
+
+            return response.data;
+        },
+        refetchInterval: 15 * 1000,
+        refetchIntervalInBackground: false,
+        staleTime: 10 * 1000,
+    });
+
     const categoriesQuery = useQuery({
         queryKey: ["categories"],
         queryFn: async () => {
-            const response = await axiosClient.get<Category[]>(
-                "/categories/"
-            );
+            const response = await axiosClient.get<Category[]>("/categories/");
 
             return response.data;
         },
@@ -95,6 +119,9 @@ export default function useHomeVideos() {
     return {
         videos: videosQuery.data?.videos ?? [],
         trendingVideos: trendingQuery.data ?? [],
+        activeLiveStreams: activeLiveStreamsQuery.data ?? [],
+        isLoadingActiveLiveStreams: activeLiveStreamsQuery.isLoading,
+        isErrorActiveLiveStreams: activeLiveStreamsQuery.isError,
         categories: categoriesQuery.data ?? [],
         isLoadingVideos: videosQuery.isLoading,
         isErrorVideos: videosQuery.isError,

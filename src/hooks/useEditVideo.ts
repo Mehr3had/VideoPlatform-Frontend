@@ -2,7 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { API, apiFetch } from "@/lib/api";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+} from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -40,18 +45,25 @@ export default function useEditVideo() {
         let cancelled = false;
 
         const getVideo = async () => {
-            const token = localStorage.getItem("accessToken");
-
-            if (!token) {
-                router.push("/login");
-                return;
-            }
-
             try {
+                const token = await ensureAccessToken();
+
+                if (cancelled) return;
+
+                if (!token) {
+                    localStorage.removeItem("username");
+                    router.replace("/login");
+                    return;
+                }
+
                 const response = await apiFetch(`${API}/videos/${videoId}/`);
 
+                if (cancelled) return;
+
                 if (response.status === 401) {
-                    router.push("/login");
+                    clearAccessToken();
+                    localStorage.removeItem("username");
+                    router.replace("/login");
                     return;
                 }
 
@@ -114,10 +126,11 @@ export default function useEditVideo() {
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const token = localStorage.getItem("accessToken");
+        const token = await ensureAccessToken();
 
         if (!token) {
-            router.push("/login");
+            localStorage.removeItem("username");
+            router.replace("/login");
             return;
         }
 
@@ -149,7 +162,9 @@ export default function useEditVideo() {
             const data = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                router.push("/login");
+                clearAccessToken();
+                localStorage.removeItem("username");
+                router.replace("/login");
                 return;
             }
 

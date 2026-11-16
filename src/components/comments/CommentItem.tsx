@@ -4,6 +4,144 @@ import { useState } from "react";
 import type { VideoComment } from "@/hooks/useVideoDetail";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import { PISHI_STICKERS } from "@/lib/stickers";
+
+function renderInlineContent(text: string, keyPrefix: string) {
+    const parts = text.split(/(:cat(?:[1-9]|1[0-9]|2[0-4]):)/g);
+
+    return parts.map((part, index) => {
+        const sticker = PISHI_STICKERS.find(
+            (item) => item.code === part
+        );
+
+        if (sticker) {
+            return (
+                <img
+                    key={`${keyPrefix}-${index}`}
+                    src={sticker.src}
+                    alt="Pishi sticker"
+                    className="inline-block h-12 w-12 object-contain align-middle"
+                />
+            );
+        }
+
+        return <span key={`${keyPrefix}-${index}`}>{part}</span>;
+    });
+}
+
+interface CommentContentProps {
+    text: string;
+    spoilerRanges: [number, number][];
+    onRemoveSpoilerRange?: (index: number) => void;
+}
+
+export function CommentContent({
+    text,
+    spoilerRanges,
+    onRemoveSpoilerRange,
+}: CommentContentProps) {
+    const { language } = useLanguage();
+    const t = translations[language].videoDetail;
+    const [revealedSpoilers, setRevealedSpoilers] = useState<number[]>([]);
+
+    const ranges = spoilerRanges
+        .filter(
+            ([start, end]) =>
+                Number.isInteger(start) &&
+                Number.isInteger(end) &&
+                start >= 0 &&
+                end > start &&
+                start < text.length
+        )
+        .map(
+            ([start, end]): [number, number] => [
+                start,
+                Math.min(end, text.length),
+            ]
+        )
+        .sort((a, b) => a[0] - b[0]);
+
+    const content: React.ReactNode[] = [];
+    let cursor = 0;
+
+    ranges.forEach(([start, end], index) => {
+        // Ignore overlapping or invalid ranges.
+        if (start < cursor) return;
+
+        if (start > cursor) {
+            content.push(
+                <span key={`text-${index}`}>
+                    {renderInlineContent(
+                        text.slice(cursor, start),
+                        `text-${index}`
+                    )}
+                </span>
+            );
+        }
+
+        const isRevealed = revealedSpoilers.includes(index);
+
+        if (isRevealed) {
+            content.push(
+                <span key={`spoiler-${index}`}>
+                    {renderInlineContent(
+                        text.slice(start, end),
+                        `spoiler-${index}`
+                    )}
+                </span>
+            );
+        } else {
+            content.push(
+                <span
+                    key={`spoiler-${index}`}
+                    className="mx-1 inline-flex items-center gap-1"
+                >
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setRevealedSpoilers((previous) =>
+                                previous.includes(index)
+                                    ? previous.filter((item) => item !== index)
+                                    : [...previous, index]
+                            )
+                        }
+                        aria-expanded={false}
+                        className="inline-flex items-center rounded-md bg-[repeating-linear-gradient(135deg,#27272a_0px,#27272a_6px,#52525b_6px,#52525b_12px)] px-3 py-1 text-xs font-semibold text-white transition hover:opacity-80"
+                    >
+                        🙈 {t.showSpoiler}
+                    </button>
+
+                    {onRemoveSpoilerRange && (
+                        <button
+                            type="button"
+                            onClick={() => onRemoveSpoilerRange(index)}
+                            aria-label={t.removeSpoiler}
+                            title={t.removeSpoiler}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-sm font-bold text-red-700 transition hover:bg-red-200 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950"
+                        >
+                            ×
+                        </button>
+                    )}
+                </span>
+            );
+        }
+        cursor = end;
+    });
+
+    if (cursor < text.length) {
+        content.push(
+            <span key="remaining-text">
+                {renderInlineContent(text.slice(cursor), "remaining")}
+            </span>
+        );
+    }
+
+    return (
+        <p className="whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+            {content}
+        </p>
+    );
+}
 
 interface CommentItemProps {
     comment: VideoComment;
@@ -14,6 +152,12 @@ interface CommentItemProps {
     editingCommentId: number | null;
     setEditingCommentId: (id: number | null) => void;
     editingCommentText: string;
+    editingCommentIsQuestion: boolean;
+    setEditingCommentIsQuestion: (value: boolean) => void;
+    editingCommentSpoilerRanges: [number, number][];
+    setEditingCommentSpoilerRanges: React.Dispatch<
+        React.SetStateAction<[number, number][]>
+    >;
     setEditingCommentText: (text: string) => void;
     editingTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
     reportingCommentId: number | null;
@@ -24,7 +168,12 @@ interface CommentItemProps {
     setReportDetails: (details: string) => void;
     submittingReport: boolean;
     onDeleteComment: (commentId: number) => void;
-    onEditComment: (commentId: number, text: string) => void;
+    onEditComment: (
+        commentId: number,
+        text: string,
+        isQuestion: boolean,
+        spoilerRanges: [number, number][]
+    ) => void;
     onReportComment: (
         commentId: number,
         reason: string,
@@ -54,6 +203,10 @@ export default function CommentItem({
     setEditingCommentId,
     editingCommentText,
     setEditingCommentText,
+    editingCommentIsQuestion,
+    setEditingCommentIsQuestion,
+    editingCommentSpoilerRanges,
+    setEditingCommentSpoilerRanges,
     editingTextareaRef,
     reportingCommentId,
     setReportingCommentId,
@@ -72,12 +225,48 @@ export default function CommentItem({
 }: CommentItemProps) {
     const { language, isPersian } = useLanguage();
     const t = translations[language].videoDetail;
-
     const [showOptions, setShowOptions] = useState(false);
-
+    const [showEditStickerPicker, setShowEditStickerPicker] = useState(false);
+    const [showEditEmojiPicker, setShowEditEmojiPicker] = useState(false);
     const replies = comments.filter(
         (item) => item.parent_comment_id === comment.id
     );
+    const handleEditSpoilerSelection = () => {
+        const textarea = editingTextareaRef.current;
+
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        if (start === end) {
+            return;
+        }
+
+        const ranges: [number, number][] = [
+            ...editingCommentSpoilerRanges,
+            [start, end],
+        ];
+
+        ranges.sort((a, b) => a[0] - b[0]);
+
+        const mergedRanges: [number, number][] = [];
+
+        for (const [rangeStart, rangeEnd] of ranges) {
+            const lastRange = mergedRanges[mergedRanges.length - 1];
+
+            if (lastRange && rangeStart <= lastRange[1]) {
+                lastRange[1] = Math.max(lastRange[1], rangeEnd);
+            } else {
+                mergedRanges.push([rangeStart, rangeEnd]);
+            }
+        }
+
+        setEditingCommentSpoilerRanges(mergedRanges);
+
+        textarea.focus({ preventScroll: true });
+        textarea.setSelectionRange(start, end);
+    };
 
     return (
         <div
@@ -141,12 +330,12 @@ export default function CommentItem({
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            setEditingCommentText(
-                                                                comment.text
+                                                            setEditingCommentText(comment.text);
+                                                            setEditingCommentIsQuestion(comment.is_question ?? false);
+                                                            setEditingCommentSpoilerRanges(
+                                                                comment.spoiler_ranges ? [...comment.spoiler_ranges] : []
                                                             );
-                                                            setEditingCommentId(
-                                                                comment.id
-                                                            );
+                                                            setEditingCommentId(comment.id);
                                                             setShowOptions(false);
                                                         }}
                                                         className="w-full rounded-md px-3 py-2 text-start text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
@@ -202,45 +391,170 @@ export default function CommentItem({
                         editingCommentId === comment.id ? (
                             <div className="mt-3 space-y-2">
                                 <div className="flex flex-wrap gap-2">
-                                    {[
-                                        "😀",
-                                        "😂",
-                                        "😍",
-                                        "❤️",
-                                        "🔥",
-                                        "👍",
-                                        "😎",
-                                        "😭",
-                                        "🎮",
-                                        "👏",
-                                        "💩",
-                                    ].map((emoji) => (
+                                    <div className="relative">
                                         <button
-                                            key={emoji}
                                             type="button"
-                                            aria-label={`${t.insertEmoji} ${emoji}`}
-                                            onClick={() =>
-                                                onInsertEmoji(
-                                                    emoji,
-                                                    editingTextareaRef.current,
-                                                    editingCommentText,
-                                                    setEditingCommentText
-                                                )
-                                            }
+                                            onClick={() => {
+                                                setShowEditEmojiPicker(!showEditEmojiPicker);
+                                                setShowEditStickerPicker(false);
+                                            }}
+                                            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-lg hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
                                         >
-                                            {emoji}
+                                            😀
                                         </button>
-                                    ))}
+
+                                        {showEditEmojiPicker && (
+                                            <div className="absolute start-0 top-full z-30 mt-2 grid w-[min(16rem,calc(100vw-2rem))] grid-cols-4 gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-[#404040] dark:bg-[#202020]">
+                                                {[
+                                                    "😀", "😂", "😍", "❤️", "🔥", "👍",
+                                                    "😎", "😭", "🎮", "👏", "💩",
+                                                ].map((emoji) => (
+                                                    <button
+                                                        key={emoji}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onInsertEmoji(
+                                                                emoji,
+                                                                editingTextareaRef.current,
+                                                                editingCommentText,
+                                                                setEditingCommentText
+                                                            );
+                                                           setShowEditEmojiPicker(false);
+                                                        }}
+                                                        className="flex h-11 w-11 items-center justify-center rounded-lg text-2xl transition hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#303030] dark:active:bg-[#404040]"
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowEditStickerPicker(!showEditStickerPicker);
+                                            setShowEditEmojiPicker(false);
+                                        }}
+                                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-lg hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                                    >
+                                        😺
+                                    </button>
+
+                                    {showEditStickerPicker && (
+                                        <div className="absolute start-0 top-full z-30 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-[#404040] dark:bg-[#202020]">
+                                            <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                پک پیشی 🐱
+                                            </p>
+
+                                            <div className="grid grid-cols-5 gap-2">
+                                                {PISHI_STICKERS.map((sticker) => (
+                                                    <button
+                                                        key={sticker.code}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onInsertEmoji(
+                                                                sticker.code,
+                                                                editingTextareaRef.current,
+                                                                editingCommentText,
+                                                                setEditingCommentText
+                                                            );
+
+                                                            setShowEditStickerPicker(false);
+                                                        }}
+                                                        className="flex items-center justify-center rounded-lg p-1 transition hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-[#303030] dark:active:bg-[#404040]"
+                                                    >
+                                                        <img
+                                                            src={sticker.src}
+                                                            alt={sticker.code}
+                                                            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Question and Spoiler Controls */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Question Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setEditingCommentIsQuestion(!editingCommentIsQuestion)
+                                        }
+                                        aria-pressed={editingCommentIsQuestion}
+                                        aria-label={t.markAsQuestion}
+                                        className={`flex h-9 w-9 items-center justify-center rounded-lg border text-lg font-bold transition ${
+                                            editingCommentIsQuestion
+                                                ? "text-white"
+                                                : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300"
+                                        }`}
+                                        style={
+                                            editingCommentIsQuestion
+                                                ? {
+                                                    backgroundColor: "var(--accent)",
+                                                    borderColor: "var(--accent)",
+                                                }
+                                                : undefined
+                                        }
+                                    >
+                                        ?
+                                    </button>
+
+                                    {/* Spoiler Button */}
+                                    <button
+                                        type="button"
+                                        onMouseDown={(event) => event.preventDefault()}
+                                        onClick={handleEditSpoilerSelection}
+                                        aria-label={t.markSelectedAsSpoiler}
+                                        title={t.selectTextFirst}
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-base transition hover:bg-gray-100 dark:border-[#404040] dark:bg-[#202020] dark:hover:bg-[#303030]"
+                                    >
+                                        🙈
+                                    </button>
+                                </div>
+
+                                {/* Edit Preview */}
+                                {editingCommentText.trim() && (
+                                    <div className="rounded-lg border border-dashed border-gray-300 p-3 dark:border-[#404040]">
+                                        <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                            {t.preview}
+                                        </p>
+
+                                        {editingCommentIsQuestion && (
+                                            <p
+                                                className="mb-2 text-xs font-bold"
+                                                style={{
+                                                    color: "var(--question-comment-color, #dc2626)",
+                                                }}
+                                            >
+                                                ? {t.question}
+                                            </p>
+                                        )}
+
+                                        <CommentContent
+                                            text={editingCommentText}
+                                            spoilerRanges={editingCommentSpoilerRanges}
+                                            onRemoveSpoilerRange={(rangeIndex) => {
+                                                setEditingCommentSpoilerRanges((previous) =>
+                                                    previous.filter((_, index) => index !== rangeIndex)
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
                                 <textarea
                                     ref={editingTextareaRef}
                                     value={editingCommentText}
-                                    onChange={(event) =>
-                                        setEditingCommentText(
-                                            event.target.value
-                                        )
-                                    }
+                                    onChange={(event) => {
+                                        setEditingCommentText(event.target.value);
+                                        setEditingCommentSpoilerRanges([]);
+                                    }}
                                     maxLength={1000}
                                     rows={3}
                                     dir="auto"
@@ -268,7 +582,9 @@ export default function CommentItem({
                                         onClick={() =>
                                             onEditComment(
                                                 comment.id,
-                                                editingCommentText
+                                                editingCommentText,
+                                                editingCommentIsQuestion,
+                                                editingCommentSpoilerRanges
                                             )
                                         }
                                         className="rounded-lg bg-red-700 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
@@ -282,14 +598,44 @@ export default function CommentItem({
                                 {t.removedComment}
                             </p>
                         ) : (
-                            <p
+                            <div
                                 dir={isPersian ? "rtl" : "ltr"}
-                                className={`mt-2 whitespace-pre-wrap break-words text-start text-sm text-gray-700 dark:text-gray-300 ${
+                                className={`mt-2 ${
                                     isPersian ? "text-right" : "text-left"
+                                } ${
+                                    comment.is_question
+                                        ? "rounded-lg bg-red-50/70 p-3 dark:bg-red-950/20"
+                                        : ""
                                 }`}
+                                style={
+                                    comment.is_question
+                                        ? {
+                                            borderInlineStart:
+                                                "4px solid var(--question-comment-color, #dc2626)",
+                                                paddingInlineStart: "12px",
+                                        }
+                                        : undefined
+                                }
                             >
-                                {comment.text}
-                            </p>
+                                {comment.is_question && (
+                                    <div
+                                        className="mb-2 flex items-center gap-1.5 text-xs font-bold"
+                                        style={{
+                                            color: "var(--question-comment-color, #dc2626)",
+                                        }}
+                                    >
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-current">
+                                            ?
+                                        </span>
+                                        {t.question}
+                                    </div>
+                                )}
+
+                                <CommentContent
+                                    text={comment.text}
+                                    spoilerRanges={comment.spoiler_ranges ?? []}
+                                />
+                            </div>
                         )}
 
                         {!comment.is_removed && (
@@ -443,6 +789,10 @@ export default function CommentItem({
                             setEditingCommentId={setEditingCommentId}
                             editingCommentText={editingCommentText}
                             setEditingCommentText={setEditingCommentText}
+                            editingCommentIsQuestion={editingCommentIsQuestion}
+                            setEditingCommentIsQuestion={setEditingCommentIsQuestion}
+                            editingCommentSpoilerRanges={editingCommentSpoilerRanges}
+                            setEditingCommentSpoilerRanges={setEditingCommentSpoilerRanges}
                             editingTextareaRef={editingTextareaRef}
                             reportingCommentId={reportingCommentId}
                             setReportingCommentId={setReportingCommentId}
