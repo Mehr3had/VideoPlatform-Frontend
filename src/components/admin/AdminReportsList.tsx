@@ -68,7 +68,7 @@ export default function AdminReportsList({
     return (
         <section
             dir={isPersian ? "rtl" : "ltr"}
-            className="rounded-xl border border-gray-200 bg-white p-5 dark:border-[#303030] dark:bg-[#181818] sm:p-6"
+            className="rounded-xl border border-gray-200 bg-white p-3 dark:border-[#303030] dark:bg-[#181818] sm:p-6"
         >
             <div className="mb-6">
                 <h2 className="text-xl font-semibold">
@@ -148,7 +148,7 @@ export default function AdminReportsList({
                     {t.noReports}
                 </p>
             ) : (
-                <div className="space-y-5">
+                <div className="space-y-3 sm:space-y-5">
                     {reports.map((report) => (
                         <AdminReportCard
                             key={report.id}
@@ -162,7 +162,7 @@ export default function AdminReportsList({
             )}
 
             {!loading && !error && totalCount > 0 && (
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-5 dark:border-[#303030]">
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-4 dark:border-[#303030] sm:mt-8 sm:gap-4 sm:pt-5">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         {t.page}{" "}
                         {currentPage.toLocaleString(

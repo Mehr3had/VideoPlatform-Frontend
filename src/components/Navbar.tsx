@@ -14,8 +14,8 @@ const translations = {
         adminPanel: "پنل مدیریت",
         notifications: "اعلان‌ها",
         settings: "تنظیمات",
-        lightMode: "تغییر به حالت روشن",
-        darkMode: "تغییر به حالت تاریک",
+        lightMode: "\u062D\u0627\u0644\u062A \u0631\u0648\u0632",
+        darkMode: "\u062D\u0627\u0644\u062A \u0634\u0628",
         logout: "خروج از حساب",
         login: "ورود",
         register: "ثبت‌نام",
@@ -29,8 +29,8 @@ const translations = {
         adminPanel: "Admin Panel",
         notifications: "Notifications",
         settings: "Settings",
-        lightMode: "Switch to Light Mode",
-        darkMode: "Switch to Dark Mode",
+        lightMode: "Day mode",
+        darkMode: "Night mode",
         logout: "Logout",
         login: "Login",
         register: "Register",
@@ -86,7 +86,7 @@ export default function Navbar() {
     };
 
     const menuItemClass =
-        "flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]";
+        "flex min-h-[42px] w-full min-w-0 items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-2 text-[11px] leading-tight text-gray-800 transition-all duration-150 hover:border-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--accent)]/20 active:text-[var(--accent)] focus-visible:border-[var(--accent)] focus-visible:bg-[var(--accent)]/10 focus-visible:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25 dark:border-[#404040] dark:text-gray-200 dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)] dark:active:border-[var(--accent)] dark:active:text-[var(--accent)] md:min-h-0 md:gap-3 md:rounded-lg md:border md:border-transparent md:px-4 md:py-3 md:text-sm md:hover:border-[var(--accent)] md:hover:bg-[var(--accent)]/10 md:hover:text-[var(--accent)] md:active:border-[var(--accent)] md:active:bg-[var(--accent)]/20 md:active:text-[var(--accent)] dark:md:hover:border-[var(--accent)] dark:md:active:border-[var(--accent)] navbar-accent-action";
 
     return (
         <nav className="relative z-50 border-b border-gray-200 bg-white px-4 py-3 dark:border-[#303030] dark:bg-[#181818] sm:px-8">
@@ -107,7 +107,7 @@ export default function Navbar() {
                                 aria-label={t.openMenu}
                                 aria-expanded={menuOpen}
                                 aria-haspopup="true"
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
+                                className="cursor-pointer flex h-10 w-10 items-center justify-center rounded-full text-2xl text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
                             >
                                 ⋮
                             </button>
@@ -115,7 +115,7 @@ export default function Navbar() {
                             {menuOpen && (
                                 <div
                                     role="menu"
-                                    className={`absolute top-full mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl dark:border-[#303030] dark:bg-[#202020] ${
+                                    className={`absolute top-full mt-2 grid w-64 grid-cols-2 gap-1 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-xl md:block md:w-64 md:gap-0 md:p-2 md:py-2 dark:border-[#303030] dark:bg-[#202020] ${
                                         isPersian ? "left-0" : "right-0"
                                     }`}
                                 >
@@ -123,25 +123,25 @@ export default function Navbar() {
                                         href={`/profile/${userId}`}
                                         role="menuitem"
                                         onClick={() => setMenuOpen(false)}
-                                        className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 hover:bg-gray-100 dark:border-[#303030] dark:hover:bg-[#303030]"
+                                        className="col-span-2 flex items-center gap-2.5 border-b border-gray-200 px-3 py-2.5 hover:bg-gray-100 md:gap-3 md:px-4 md:py-3 dark:border-[#303030] dark:hover:bg-[#303030]"
                                     >
                                         {profileImage ? (
                                             <img
                                                 src={profileImage}
                                                 alt=""
-                                                className="h-11 w-11 shrink-0 rounded-full object-cover"
+                                                className="h-9 w-9 shrink-0 rounded-full object-cover md:h-11 md:w-11"
                                             />
                                         ) : (
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-200 text-lg font-bold text-gray-700 dark:bg-[#404040] dark:text-gray-100">
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-200 text-base md:h-11 md:w-11 md:text-lg font-bold text-gray-700 dark:bg-[#404040] dark:text-gray-100">
                                                 {username.charAt(0).toUpperCase()}
                                             </div>
                                         )}
 
                                         <div className="min-w-0">
-                                            <p className="truncate font-semibold text-gray-900 dark:text-gray-100">
+                                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100 md:text-base">
                                                 {username}
                                             </p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 md:text-sm">
                                                 {t.viewProfile}
                                             </p>
                                         </div>
@@ -163,15 +163,15 @@ export default function Navbar() {
                                         href="/notifications"
                                         role="menuitem"
                                         onClick={() => setMenuOpen(false)}
-                                        className="flex items-center justify-between px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
+                                        className={`${menuItemClass} justify-between`}
                                     >
-                                        <span className="flex items-center gap-3">
+                                        <span className="flex min-w-0 items-center gap-1 md:gap-3">
                                             <span aria-hidden="true">🔔</span>
-                                            {t.notifications}
+                                            <span className="shrink-0 whitespace-nowrap text-[10px] md:text-sm">{t.notifications}</span>
                                         </span>
 
                                         {unreadCount > 0 && (
-                                            <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                                            <span className="inline-flex h-4 min-w-4 max-w-5 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full bg-[var(--accent)] px-0 text-[8px] font-bold leading-none text-white md:h-[18px] md:min-w-[18px] md:max-w-[30px] md:px-1 md:text-[10px]">
                                                 {unreadCount > 99 ? "99+" : unreadCount}
                                             </span>
                                         )}
@@ -194,7 +194,7 @@ export default function Navbar() {
                                             toggleTheme();
                                             setMenuOpen(false);
                                         }}
-                                        className={menuItemClass}
+                                        className={`${menuItemClass} cursor-pointer`}
                                     >
                                         <span aria-hidden="true">
                                             {darkMode ? "☀️" : "🌙"}
@@ -202,10 +202,10 @@ export default function Navbar() {
                                         {darkMode ? t.lightMode : t.darkMode}
                                     </button>
 
-                                    <div className="my-2 border-t border-gray-200 dark:border-[#303030]" />
+                                    <div className="my-1 col-span-2 border-t border-gray-200 dark:border-[#303030] md:my-2" />
 
-                                    <div className="px-4 py-3">
-                                        <p className="mb-3 text-sm font-medium text-gray-800 dark:text-gray-200">
+                                    <div className="col-span-2 px-3 py-2.5 md:px-4 md:py-3">
+                                        <p className="mb-2 text-xs font-medium text-gray-800 md:mb-3 md:text-sm dark:text-gray-200">
                                             🌐 {t.language}
                                         </p>
 
@@ -214,7 +214,7 @@ export default function Navbar() {
                                                 type="button"
                                                 onClick={() => handleLanguageChange("fa")}
                                                 aria-pressed={language === "fa"}
-                                                className={`rounded-lg border px-2 py-2 text-sm transition ${
+                                                className={`cursor-pointer rounded-lg border px-2 py-1.5 text-xs transition md:py-2 md:text-sm ${
                                                     language === "fa"
                                                         ? "border-[var(--accent)] bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
                                                         : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
@@ -227,7 +227,7 @@ export default function Navbar() {
                                                 type="button"
                                                 onClick={() => handleLanguageChange("en")}
                                                 aria-pressed={language === "en"}
-                                                className={`rounded-lg border px-2 py-2 text-sm transition ${
+                                                className={`cursor-pointer rounded-lg border px-2 py-1.5 text-xs transition md:py-2 md:text-sm ${
                                                     language === "en"
                                                         ? "border-[var(--accent)] bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
                                                         : "border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
@@ -238,13 +238,13 @@ export default function Navbar() {
                                         </div>
                                     </div>
 
-                                    <div className="my-2 border-t border-gray-200 dark:border-[#303030]" />
+                                    <div className="my-1 col-span-2 border-t border-gray-200 dark:border-[#303030] md:my-2" />
 
                                     <button
                                         type="button"
                                         role="menuitem"
                                         onClick={handleLogout}
-                                        className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                        className="col-span-2 cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium text-red-700 md:gap-3 md:rounded-none md:px-4 md:py-3 md:text-sm hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
                                     >
                                         <span aria-hidden="true">↪</span>
                                         {t.logout}

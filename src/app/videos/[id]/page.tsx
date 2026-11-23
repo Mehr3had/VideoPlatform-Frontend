@@ -49,6 +49,8 @@ export default function VideoDetailPage() {
         handleDeleteComment,
         submittingReport,
         handleReportComment,
+        submittingVideoReport,
+        handleReportVideo,
     } = useVideoDetail();
 
     const commentFormRef = useRef<HTMLFormElement>(null);
@@ -65,6 +67,10 @@ export default function VideoDetailPage() {
     const [reportingCommentId, setReportingCommentId] = useState<number | null>(null);
     const [reportReason, setReportReason] = useState("spam");
     const [reportDetails, setReportDetails] = useState("");
+    const [showVideoReport, setShowVideoReport] = useState(false);
+    const [videoReportReason, setVideoReportReason] = useState("spam");
+    const [videoReportDetails, setVideoReportDetails] = useState("");
+    const [videoReportSuccess, setVideoReportSuccess] = useState("");
     const [showStickerPicker, setShowStickerPicker] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -89,6 +95,22 @@ export default function VideoDetailPage() {
         }
     };
 
+
+    const handleVideoReportSubmit = async () => {
+        if (submittingVideoReport) return;
+
+        const submitted = await handleReportVideo(
+            videoReportReason,
+            videoReportDetails
+        );
+
+        if (submitted) {
+            setShowVideoReport(false);
+            setVideoReportReason("spam");
+            setVideoReportDetails("");
+            setVideoReportSuccess(t.videoReportSuccess);
+        }
+    };
     if (loading) {
         return (
             <main
@@ -299,26 +321,28 @@ export default function VideoDetailPage() {
                 <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
                     <button
                         onClick={() => handleReaction("like")}
-                        className={`rounded-lg px-5 py-2 font-medium transition ${
+                        aria-label={`${t.like} ${likesCount}`} className={`group relative rounded-lg px-5 py-2 font-medium transition ${
                             userReaction === "like"
                                 ? "bg-[var(--accent)] text-white"
                                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                         }`}
                         aria-pressed={userReaction === "like"}
                     >
-                        👍 {t.like} {likesCount}
+                        👍 <span className="hidden sm:inline">{t.like}</span> {likesCount}
+                    <span role="tooltip" className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-active:visible group-active:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100 sm:hidden">{t.like}</span>
                     </button>
 
                     <button
                         onClick={() => handleReaction("dislike")}
-                        className={`rounded-lg px-5 py-2 font-medium transition ${
+                        aria-label={`${t.dislike} ${dislikesCount}`} className={`group relative rounded-lg px-5 py-2 font-medium transition ${
                             userReaction === "dislike"
                                 ? "bg-[var(--accent)] text-white"
                                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030]"
                         }`}
                         aria-pressed={userReaction === "dislike"}
                     >
-                        👎 {t.dislike} {dislikesCount}
+                        👎 <span className="hidden sm:inline">{t.dislike}</span> {dislikesCount}
+                    <span role="tooltip" className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-active:visible group-active:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100 sm:hidden">{t.dislike}</span>
                     </button>
 
                     <button
@@ -328,15 +352,118 @@ export default function VideoDetailPage() {
                             );
                             alert(t.linkCopied);
                         }}
-                        className={`rounded-lg border border-gray-300 bg-white py-2 font-medium text-gray-700 whitespace-nowrap transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030] ${
+                        aria-label={t.share} className={`group relative rounded-lg border border-gray-300 bg-white py-2 font-medium text-gray-700 whitespace-nowrap transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030] ${
                             isPersian
                                 ? "px-2.5 text-xs sm:px-5 sm:text-base"
                                 : "px-5"
                         }`}
                     >
-                        🔗 {t.share}
+                        🔗 <span className="hidden sm:inline">{t.share}</span>
+                    <span role="tooltip" className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-active:visible group-active:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100 sm:hidden">{t.share}</span>
                     </button>
+
+                    {video && currentUserId !== video.user_id && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setVideoReportSuccess("");
+                                setShowVideoReport((current) => !current);
+                            }}
+                            aria-expanded={showVideoReport}
+                            aria-label={t.reportVideo} className={`group relative rounded-lg border border-red-300 bg-white py-2 font-medium text-red-700 whitespace-nowrap transition hover:bg-red-50 dark:border-red-900 dark:bg-[#202020] dark:text-red-300 dark:hover:bg-red-950/30 ${
+                                isPersian
+                                    ? "px-2.5 text-xs sm:px-5 sm:text-base"
+                                    : "px-5"
+                            }`}
+                        >
+                            🚩 <span className="hidden sm:inline">{t.reportVideo}</span>
+                        <span role="tooltip" className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-active:visible group-active:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100 sm:hidden">{t.reportVideo}</span>
+                        </button>
+                    )}
                 </div>
+
+                {showVideoReport && (
+                    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818]">
+                        <h3 className="mb-4 text-start font-semibold text-gray-900 dark:text-gray-100">
+                            {t.reportVideo}
+                        </h3>
+
+                        <label
+                            htmlFor="video-report-reason"
+                            className="mb-1 block text-start text-sm font-medium text-gray-800 dark:text-gray-200"
+                        >
+                            {t.reason}
+                        </label>
+
+                        <select
+                            id="video-report-reason"
+                            value={videoReportReason}
+                            onChange={(event) =>
+                                setVideoReportReason(event.target.value)
+                            }
+                            className="mb-3 w-full rounded-lg border border-gray-300 bg-white p-2 text-start text-sm text-gray-900 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                        >
+                            <option value="spam">{t.spam}</option>
+                            <option value="harassment">{t.harassment}</option>
+                            <option value="hate_speech">{t.hateSpeech}</option>
+                            <option value="inappropriate">{t.inappropriate}</option>
+                            <option value="misinformation">{t.misinformation}</option>
+                            <option value="other">{t.other}</option>
+                        </select>
+
+                        <label
+                            htmlFor="video-report-details"
+                            className="mb-1 block text-start text-sm font-medium text-gray-800 dark:text-gray-200"
+                        >
+                            {t.additionalDetails}
+                        </label>
+
+                        <textarea
+                            id="video-report-details"
+                            value={videoReportDetails}
+                            onChange={(event) =>
+                                setVideoReportDetails(
+                                    event.target.value.slice(0, 500)
+                                )
+                            }
+                            dir="auto"
+                            maxLength={500}
+                            rows={3}
+                            className="mb-3 w-full rounded-lg border border-gray-300 bg-white p-3 text-start text-sm text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                        />
+
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                disabled={submittingVideoReport}
+                                onClick={() => setShowVideoReport(false)}
+                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
+                            >
+                                {t.cancel}
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={submittingVideoReport}
+                                onClick={() => void handleVideoReportSubmit()}
+                                className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {submittingVideoReport
+                                    ? t.submitting
+                                    : t.submitReport}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {videoReportSuccess && (
+                    <p
+                        role="status"
+                        className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/30 dark:text-green-300"
+                    >
+                        {videoReportSuccess}
+                    </p>
+                )}
             </section>
 
             <section className="mx-auto mt-6 w-full max-w-5xl px-3 pb-8 sm:mt-10 sm:px-6 sm:pb-10 lg:px-8">

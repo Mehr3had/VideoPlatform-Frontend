@@ -1,35 +1,14 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
-import VideoCard from "@/components/videos/VideoCard";
-import LiveStreamCard from "@/components/live/LiveStreamCard";
-import VideoFilters from "@/components/videos/VideoFilters";
+import DesktopHomeView from "@/components/home/DesktopHomeView";
+import MobileHomeView from "@/components/home/MobileHomeView";
 import useHomeVideos from "@/hooks/useHomeVideos";
 import { useLanguage } from "@/context/LanguageContext";
-import { translations } from "@/i18n/translations";
 
 export default function Home() {
-    const {
-        videos,
-        trendingVideos,
-        activeLiveStreams,
-        categories,
-        isLoadingVideos,
-        isErrorVideos,
-        isLoadingTrending,
-        isLoadingCategories,
-        search,
-        setSearch,
-        category,
-        page,
-        setPage,
-        totalPages,
-        handleSearch,
-        handleCategoryChange,
-    } = useHomeVideos();
-
-    const { language, isPersian } = useLanguage();
-    const t = translations[language].home;
+    const home = useHomeVideos();
+    const { isPersian } = useLanguage();
 
     return (
         <main
@@ -38,112 +17,13 @@ export default function Home() {
         >
             <Navbar />
 
-            <section className="px-4 py-8 sm:px-8 sm:py-12">
-                <VideoFilters
-                    search={search}
-                    onSearchChange={setSearch}
-                    category={category}
-                    categories={categories}
-                    onCategoryChange={handleCategoryChange}
-                    onSearch={handleSearch}
-                />
+            <div className="hidden md:block">
+                <DesktopHomeView home={home} />
+            </div>
 
-                {!search.trim() && activeLiveStreams.length > 0 && (
-                    <section className="mb-12">
-                        <div className="mb-6 flex items-center gap-3">
-                            <span className="relative flex h-3 w-3">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-                                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
-                            </span>
-
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                {isPersian
-                                    ? "\u067E\u062E\u0634 \u0632\u0646\u062F\u0647"
-                                    : "Live now"}
-                            </h2>
-                        </div>
-
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {activeLiveStreams.map((stream) => (
-                                <LiveStreamCard
-                                    key={stream.id}
-                                    stream={stream}
-                                />
-                            ))}
-                        </div>
-                    </section>
-                )}
-                {!search.trim() && trendingVideos.length > 0 && (
-                    <section className="mb-12">
-                        <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                            🔥 {t.trendingVideos}
-                        </h2>
-
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {trendingVideos.slice(0, 3).map((video) => (
-                                <VideoCard key={video.id} video={video} />
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                <h2 className="mb-8 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                    {t.latestVideos}
-                </h2>
-
-                {isLoadingVideos ? (
-                    <p
-                        role="status"
-                        className="mt-10 text-center text-gray-500 dark:text-gray-400"
-                    >
-                        {isPersian ? "در حال بارگذاری ویدئوها..." : "Loading videos..."}
-                    </p>
-                ) : isErrorVideos ? (
-                    <p role="alert" className="mt-10 text-center text-red-600 dark:text-red-400">
-                        {isPersian
-                            ? "دریافت ویدئوها ناموفق بود. لطفاً دوباره تلاش کن."
-                            : "Failed to load videos. Please try again."}
-                    </p>
-                ) : (
-                    <>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {videos.map((video) => (
-                                <VideoCard key={video.id} video={video} />
-                            ))}
-                        </div>
-
-                        {videos.length === 0 && (
-                            <p className="mt-10 text-center text-gray-500 dark:text-gray-400">
-                                {t.noVideos}
-                            </p>
-                        )}
-                    </>
-                )}
-
-                {totalPages > 1 && (
-                    <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                        <button
-                            onClick={() => setPage((prev) => prev - 1)}
-                            disabled={page === 1}
-                            className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#404040] dark:bg-[#181818] dark:text-gray-300 dark:hover:bg-[#252525]"
-                        >
-                            {isPersian ? "→" : "←"} {t.previous}
-                        </button>
-
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {t.page} {page} {t.of} {totalPages}
-                        </span>
-
-                        <button
-                            onClick={() => setPage((prev) => prev + 1)}
-                            disabled={page === totalPages}
-                            className="accent-button rounded-lg px-5 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            {t.next} {isPersian ? "←" : "→"}
-                        </button>
-                    </div>
-                )}
-            </section>
+            <div className="md:hidden">
+                <MobileHomeView home={home} />
+            </div>
         </main>
     );
 }

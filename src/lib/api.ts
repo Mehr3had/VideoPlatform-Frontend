@@ -163,6 +163,125 @@ export async function ensureAccessToken(): Promise<string | null> {
   return refreshAccessToken();
 }
 
+type ApiUploadCallbacks = {
+    onProgress?: (percent: number) => void;
+    onUploadComplete?: () => void;
+};
+
+export async function apiUpload(
+    url: string,
+    options: RequestInit = {},
+    callbacks: ApiUploadCallbacks = {},
+    retry = true,
+): Promise<Response> {
+    const tokenUsed = getAccessToken();
+    const method = (options.method ?? "GET").toUpperCase();
+    const csrf = SAFE_METHODS.has(method) ? null : await requestCsrfToken();
+
+    const buildHeaders = (token: string | null) => getHeaders(options, token, csrf);
+
+    const sendRequest = (token: string | null): Promise<Response> =>
+        new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            callbacks.onProgress?.(0);
+
+            xhr.open(method, url, true);
+            xhr.withCredentials = true;
+
+            buildHeaders(token).forEach((value, key) => {
+                xhr.setRequestHeader(key, value);
+            });
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable && event.total > 0) {
+                    const percent = Math.min(
+                        100,
+                        Math.round((event.loaded / event.total) * 100),
+                    );
+                    callbacks.onProgress?.(percent);
+                }
+            };
+
+            xhr.upload.onload = () => {
+                callbacks.onProgress?.(100);
+                callbacks.onUploadComplete?.();
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 0) {
+                    reject(new Error("Upload request failed."));
+                    return;
+                }
+
+                try {
+                    const responseHeaders = new Headers();
+                    const rawHeaders = xhr.getAllResponseHeaders();
+
+                    rawHeaders.split(/\r?\n/).forEach((line) => {
+                        const separatorIndex = line.indexOf(":");
+
+                        if (separatorIndex > 0) {
+                            responseHeaders.append(
+                                line.slice(0, separatorIndex).trim(),
+                                line.slice(separatorIndex + 1).trim(),
+                            );
+                        }
+                    });
+
+                    const responseBody = [204, 205, 304].includes(xhr.status)
+                        ? null
+                        : xhr.responseText;
+
+                    resolve(
+                        new Response(responseBody, {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            headers: responseHeaders,
+                        }),
+                    );
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            xhr.onerror = () => reject(new Error("Network request failed."));
+            xhr.onabort = () => reject(new Error("Upload request was aborted."));
+
+            if (options.body === null || options.body === undefined) {
+                xhr.send();
+            } else {
+                xhr.send(options.body as XMLHttpRequestBodyInit);
+            }
+        });
+
+    const response = await sendRequest(tokenUsed);
+
+    if (
+        response.status !== 401 ||
+        !retry ||
+        url.includes("/login/") ||
+        url.includes("/refresh/") ||
+        url.includes("/logout/")
+    ) {
+        return response;
+    }
+
+    const currentToken = getAccessToken();
+
+    if (currentToken && currentToken !== tokenUsed) {
+        return sendRequest(currentToken);
+    }
+
+    const newAccessToken = await refreshAccessToken();
+
+    if (!newAccessToken) {
+        return response;
+    }
+
+    return sendRequest(newAccessToken);
+}
+
 export async function apiFetch(
   url: string,
   options: RequestInit = {},

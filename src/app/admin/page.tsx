@@ -3,6 +3,7 @@
 import Link from "next/link";
 import AdminStats from "@/components/admin/AdminStats";
 import AdminReportsList from "@/components/admin/AdminReportsList";
+import VideoReportsList from "@/components/admin/VideoReportsList";
 import LiveReportsList from "@/components/admin/LiveReportsList";
 import LiveChatReportsList from "@/components/admin/LiveChatReportsList";
 import useAdminReports from "@/hooks/useAdminReports";
@@ -46,10 +47,27 @@ export default function AdminPage() {
 
                     <Link
                         href="/"
-                        className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030] sm:px-5"
+                        aria-label={t.backHome}
+                        title={t.backHome}
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030]"
                     >
-                        {t.backHome}
-                        <span aria-hidden="true">←</span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            {isPersian ? (
+    <path d="M19 12H5m7 7-7-7 7-7" />
+) : (
+    <path d="M5 12h14m-7-7 7 7-7 7" />
+)}
+                        </svg>
                     </Link>
                 </div>
             </header>
@@ -95,6 +113,7 @@ export default function AdminPage() {
                     onChangeStatus={admin.changeStatus}
                     onRemoveComment={admin.removeComment}
                 />
+                <VideoReportsList isAdmin={admin.isAdmin} />
                 <LiveReportsList isAdmin={admin.isAdmin} />
                 <LiveChatReportsList isAdmin={admin.isAdmin} />
             </section>

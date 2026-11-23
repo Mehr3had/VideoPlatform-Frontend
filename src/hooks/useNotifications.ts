@@ -24,14 +24,14 @@ export interface Notification {
 }
 
 export const notificationIcons: Record<string, string> = {
-    subscription: "ðŸ‘¤",
-    video_like: "ðŸ‘",
-    comment: "ðŸ’¬",
-    comment_reply: "â†©ï¸",
-    comment_like: "â",
-    activity_digest: "ðŸ“¬",
-    milestone: "ðŸŽ‰",
-    new_video: "ðŸŽ¬",
+    subscription: "\uD83D\uDC64",
+    video_like: "\uD83D\uDC4D",
+    comment: "\uD83D\uDCAC",
+    comment_reply: "\u21A9\uFE0F",
+    comment_like: "\u2764\uFE0F",
+    activity_digest: "\uD83D\uDCEC",
+    milestone: "\uD83C\uDF89",
+    new_video: "\uD83C\uDFAC",
 };
 
 export default function useNotifications() {

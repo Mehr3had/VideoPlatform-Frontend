@@ -48,10 +48,10 @@ export default function AdminReportCard({
     return (
         <article
             dir={isPersian ? "rtl" : "ltr"}
-            className="rounded-xl border border-gray-200 p-5 dark:border-[#303030]"
+            className="mx-0.5 rounded-lg border border-gray-200 p-3 dark:border-[#303030] sm:mx-0 sm:rounded-xl sm:p-5"
         >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="font-semibold">
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <h3 className="text-sm font-semibold sm:text-base">
                     {t.report} #{formatNumber(report.id)}
                 </h3>
 
@@ -62,7 +62,7 @@ export default function AdminReportCard({
                 </span>
             </div>
 
-            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 text-xs sm:mt-4 sm:gap-3 sm:text-sm sm:grid-cols-2">
                 <p>
                     <span className="text-gray-500">
                         {t.commentAuthor}{" "}
@@ -92,14 +92,14 @@ export default function AdminReportCard({
                 </p>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-3 sm:mt-4">
                 <p className="text-sm font-medium">
                     {t.reportedComment}
                 </p>
 
                 <p
                     dir="auto"
-                    className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm dark:bg-[#222222]"
+                    className="mt-1.5 whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-xs dark:bg-[#222222] sm:mt-2 sm:p-4 sm:text-sm"
                 >
                     {report.comment_text}
                 </p>
@@ -112,21 +112,21 @@ export default function AdminReportCard({
             </div>
 
             {report.details && (
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                     <p className="text-sm font-medium">
                         {t.additionalDetails}
                     </p>
 
                     <p
                         dir="auto"
-                        className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300"
+                        className="mt-1.5 whitespace-pre-wrap break-words text-xs text-gray-600 dark:text-gray-300 sm:mt-2 sm:text-sm"
                     >
                         {report.details}
                     </p>
                 </div>
             )}
 
-            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-3 text-[11px] text-gray-500 dark:text-gray-400 sm:mt-4 sm:text-xs">
                 {t.submitted} {formatDate(report.created_at)}
             </p>
 
@@ -137,14 +137,14 @@ export default function AdminReportCard({
             )}
 
             {report.status === "pending" && (
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-3">
                     <button
                         type="button"
                         disabled={updating}
                         onClick={() =>
                             onChangeStatus(report.id, "reviewed")
                         }
-                        className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                        className="accent-button rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
                     >
                         {updating ? t.updating : t.markReviewed}
                     </button>
@@ -155,7 +155,7 @@ export default function AdminReportCard({
                         onClick={() =>
                             onChangeStatus(report.id, "dismissed")
                         }
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#444444] dark:hover:bg-[#252525]"
+                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#444444] dark:hover:bg-[#252525] sm:px-4 sm:py-2 sm:text-sm"
                     >
                         {t.dismissReport}
                     </button>
@@ -165,7 +165,7 @@ export default function AdminReportCard({
                             type="button"
                             disabled={updating}
                             onClick={() => onRemoveComment(report.id)}
-                            className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
                         >
                             {t.removeComment}
                         </button>

@@ -369,9 +369,9 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                 </p>
             )}
 
-            <div className="space-y-2 bg-[#101010] px-3 py-3 text-white sm:px-4">
-                <div dir="ltr" className="relative flex h-5 items-center">
-                    <div className="absolute h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+            <div className="space-y-1.5 bg-[#101010] px-2.5 py-2 text-white sm:space-y-2 sm:px-4 sm:py-3">
+                <div dir="ltr" className="relative flex h-4 items-center sm:h-5">
+                    <div className="absolute h-1 w-full overflow-hidden rounded-full bg-white/20 sm:h-1.5">
                         <div
                             className="h-full rounded-full bg-violet-500"
                             style={{ width: `${progressPercent}%` }}
@@ -389,12 +389,12 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                         onChange={(event) => {
                             seekTo(seekStart + Number(event.target.value));
                         }}
-                        className="live-dvr-slider absolute inset-0 h-full w-full cursor-pointer disabled:cursor-not-allowed"
+                        className="live-dvr-slider absolute inset-0 h-full w-full cursor-pointer touch-pan-y disabled:cursor-not-allowed"
                     />
                 </div>
 
-                <div dir="ltr" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
+                <div dir="ltr" className="live-player-controls-row flex flex-nowrap items-center justify-between gap-1 sm:flex-wrap sm:gap-x-3 sm:gap-y-3">
+                    <div className="live-player-main-controls flex min-w-0 flex-1 flex-nowrap items-center gap-1 sm:flex-wrap sm:flex-initial sm:gap-2">
 
                         {/* Play / Pause */}
                         <button
@@ -402,7 +402,7 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             onClick={() => void togglePlayback()}
                             aria-label={isPlaying ? "Pause" : "Play"}
                             title={isPlaying ? "Pause" : "Play"}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 sm:h-9 sm:w-9"
                         >
                             {isPlaying ? (
                                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -422,7 +422,7 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             onClick={toggleMute}
                             aria-label={muted ? "Unmute" : "Mute"}
                             title={muted ? "Unmute" : "Mute"}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 sm:h-9 sm:w-9"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -463,14 +463,14 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             style={{
                                 background: `linear-gradient(to right, #8b5cf6 ${(muted ? 0 : volume) * 100}%, rgba(255,255,255,0.25) ${(muted ? 0 : volume) * 100}%) center / 100% 5px no-repeat`,
                             }}
-                            className="live-volume-slider h-5 w-20 cursor-pointer sm:w-28"
+                            className="live-volume-slider hidden h-5 w-20 cursor-pointer sm:block sm:w-28"
                         />
 
                         {/* Live delay */}
                         {behindLiveSeconds !== null && (
                             <span
                                 dir="ltr"
-                                className="min-w-[48px] px-1 text-center font-mono text-xs font-semibold text-violet-300"
+                                className="hidden min-w-[48px] px-1 text-center font-mono text-xs font-semibold text-violet-300 sm:inline-flex"
                                 title="Delay behind live"
                             >
                                 −{formatLiveDelay(behindLiveSeconds)}
@@ -484,7 +484,7 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             disabled={isAtLiveEdge}
                             aria-label="Go to live"
                             title="Go to live"
-                            className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition active:scale-95 ${
+                            className={`order-5 sm:order-none flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition active:scale-95 sm:h-9 sm:px-3 ${
                                 isAtLiveEdge
                                     ? "bg-red-500/10 text-red-400"
                                     : "bg-red-600 text-white hover:bg-red-500"
@@ -503,7 +503,7 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             disabled={seekRange <= 0 || currentTime <= seekStart}
                             aria-label="Back 10 seconds"
                             title="Back 10 seconds"
-                            className="flex h-9 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                            className="order-3 sm:order-none flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 sm:h-9 sm:w-10"
                         >
                             <SkipIcon direction="backward" />
                         </button>
@@ -515,20 +515,20 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             disabled={seekRange <= 0 || currentTime >= seekEnd - 0.5}
                             aria-label="Forward 10 seconds"
                             title="Forward 10 seconds"
-                            className="flex h-9 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                            className="order-4 sm:order-none flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 sm:h-9 sm:w-10"
                         >
                             <SkipIcon direction="forward" />
                         </button>
                     </div>
 
                     {/* Picture in Picture / Fullscreen */}
-                    <div className="flex items-center gap-1">
+                    <div className="live-player-secondary-controls flex shrink-0 items-center gap-1 sm:gap-2">
                         <button
                             type="button"
                             onClick={togglePiP}
                             aria-label="Picture in picture"
                             title="Picture in picture"
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/15 active:scale-95 ${
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/15 active:scale-95 sm:h-9 sm:w-9 ${
                                 isPiP ? "text-violet-400" : "text-white"
                             }`}
                         >
@@ -551,7 +551,7 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                             onClick={toggleFullscreen}
                             aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
                             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 active:scale-95 sm:h-9 sm:w-9"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -612,6 +612,22 @@ export default function LivePlayer({ src, errorText }: LivePlayerProps) {
                     outline: 2px solid #a78bfa;
                     outline-offset: 3px;
                 }
+                .live-player-shell .live-dvr-slider::-webkit-slider-runnable-track {
+                    height: 4px;
+                    border-radius: 9999px;
+                    background: transparent;
+                }
+
+                .live-player-shell .live-dvr-slider::-moz-range-track {
+                    height: 4px;
+                    border-radius: 9999px;
+                    background: transparent;
+                }
+
+                .live-player-shell .live-dvr-slider::-moz-range-progress {
+                    background: transparent;
+                }
+
                 .live-player-shell .live-volume-slider::-webkit-slider-runnable-track {
                     height: 5px;
                     border-radius: 9999px;

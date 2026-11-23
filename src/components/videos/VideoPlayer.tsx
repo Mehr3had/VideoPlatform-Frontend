@@ -359,6 +359,8 @@ export default function VideoPlayer({
     const hasPlaybackStartedRef = useRef(false);
     const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
     const [selectedQuality, setSelectedQuality] = useState("auto");
+    const [isLoopEnabled, setIsLoopEnabled] = useState(false);
+    const loopEnabledRef = useRef(false);
     const pendingQualityRef = useRef<string | null>(null);
     const activeQualityRef = useRef("auto");
     const lastCompletedQualityRef = useRef("auto");
@@ -1055,6 +1057,19 @@ export default function VideoPlayer({
         }
     };
 
+    const handleLoopToggle = () => {
+        const nextEnabled = !loopEnabledRef.current;
+
+        loopEnabledRef.current = nextEnabled;
+        setIsLoopEnabled(nextEnabled);
+
+        const player = playerRef.current;
+
+        if (player && !player.isDisposed()) {
+            player.loop(nextEnabled);
+        }
+    };
+
     useEffect(() => {
         let preference = "off";
 
@@ -1087,6 +1102,8 @@ export default function VideoPlayer({
         if (!container) return;
 
         const id = String(videoId);
+        loopEnabledRef.current = false;
+        setIsLoopEnabled(false);
         hasPlaybackStartedRef.current = false;
         let restoredProgress = false;
         let restoringProgress = false;
@@ -1107,6 +1124,7 @@ export default function VideoPlayer({
 
         const player = videojs(videoElement, {
             controls: true,
+            loop: false,
             userActions: {
                 click: false,
             },
@@ -1635,6 +1653,161 @@ export default function VideoPlayer({
         };
     }, []);
 
+    useEffect(() => {
+        const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+            const desktopQuery = window.matchMedia(
+                "(min-width: 768px) and (hover: hover) and (pointer: fine)"
+            );
+
+            if (!desktopQuery.matches || isSettingsOpen) return;
+
+            if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+            const container = containerRef.current;
+            if (!container) return;
+
+            const activeElement = document.activeElement;
+
+            if (
+                activeElement instanceof HTMLElement &&
+                activeElement !== document.body &&
+                !container.contains(activeElement)
+            ) {
+                return;
+            }
+
+            const playerForFullscreen = playerRef.current;
+            const isPlayerFullscreen = Boolean(
+                playerForFullscreen &&
+                !playerForFullscreen.isDisposed() &&
+                playerForFullscreen.isFullscreen()
+            );
+
+            const pointerOverPlayer = container.matches(":hover");
+            const focusInsidePlayer =
+                activeElement instanceof Node &&
+                container.contains(activeElement);
+
+            if (
+                !pointerOverPlayer &&
+                !focusInsidePlayer &&
+                !isPlayerFullscreen
+            ) {
+                return;
+            }
+
+            const target = event.target;
+
+            if (target instanceof Element) {
+                if (
+                    target.closest(
+                        'input, textarea, select, [contenteditable="true"], [role="textbox"], .vjs-slider'
+                    )
+                ) {
+                    return;
+                }
+            }
+
+            const mediaKeys = [event.key, event.code];
+            const isMediaPlayPause = mediaKeys.includes("MediaPlayPause");
+            const isMediaPlay = mediaKeys.includes("MediaPlay");
+            const isMediaPause = mediaKeys.includes("MediaPause");
+
+            if (isMediaPlayPause || isMediaPlay || isMediaPause) {
+                if (event.repeat) return;
+
+                const player = playerRef.current;
+                if (!player || player.isDisposed()) return;
+
+                const nativeVideo = player.el()?.querySelector("video");
+                if (!(nativeVideo instanceof HTMLVideoElement)) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (isMediaPlayPause) {
+                    togglePlayback();
+                } else if (isMediaPlay && nativeVideo.paused) {
+                    togglePlayback();
+                } else if (isMediaPause && !nativeVideo.paused) {
+                    togglePlayback();
+                }
+
+                return;
+            }
+
+            switch (event.key) {
+                case "ArrowUp": {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const player = playerRef.current;
+                    if (!player || player.isDisposed()) return;
+
+                    const currentVolume = player.volume();
+                    if (typeof currentVolume !== "number") return;
+
+                    player.volume(Math.min(1, currentVolume + 0.05));
+
+                    if (player.muted()) {
+                        player.muted(false);
+                    }
+
+                    break;
+                }
+
+                case "ArrowDown": {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const player = playerRef.current;
+                    if (!player || player.isDisposed()) return;
+
+                    const currentVolume = player.volume();
+                    if (typeof currentVolume !== "number") return;
+
+                    player.volume(Math.max(0, currentVolume - 0.05));
+                    break;
+                }
+
+                case "ArrowRight":
+                    event.preventDefault();
+                    event.stopPropagation();
+                    skip(10);
+                    break;
+
+                case "ArrowLeft":
+                    event.preventDefault();
+                    event.stopPropagation();
+                    skip(-10);
+                    break;
+
+                case " ":
+                case "Spacebar": {
+                    if (event.repeat) return;
+
+                    if (
+                        target instanceof Element &&
+                        target.closest("button, a")
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    togglePlayback();
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyboardShortcuts);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyboardShortcuts);
+        };
+    }, [skip, togglePlayback, isSettingsOpen]);
+
     return (
         <div
             ref={containerRef}
@@ -1647,53 +1820,57 @@ export default function VideoPlayer({
             onPointerCancel={handleHoldEnd}
             className="relative w-full min-w-0 overflow-hidden rounded-lg bg-black sm:rounded-xl [&_.video-js]:bg-black"
         >
-            {/* Mobile player header */}
-            <div
-                dir="ltr"
-                className="mobile-player-header pointer-events-none absolute left-2 right-2 top-2 z-20 flex flex-row items-center justify-between gap-3"
-            >
-                {/* Settings button - Left */}
-                <button
-                    type="button"
-                    onClick={() =>
-                        playerRef.current?.trigger("settingsbuttonclick")
-                    }
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onTouchEnd={(event) => event.stopPropagation()}
-                    aria-label={isPersian ? "تنظیمات" : "Settings"}
-                    title={isPersian ? "تنظیمات" : "Settings"}
-                    className="pointer-events-auto flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80 active:bg-black"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path d="M10.3 2.8h3.4l.5 2.1a7.5 7.5 0 0 1 1.7.7l1.9-1.1 2.4 2.4-1.1 1.9a7.5 7.5 0 0 1 .7 1.7l2.1.5v3.4l-2.1.5a7.5 7.5 0 0 1-.7 1.7l1.1 1.9-2.4 2.4-1.9-1.1a7.5 7.5 0 0 1-1.7.7l-.5 2.1h-3.4l-.5-2.1a7.5 7.5 0 0 1-1.7-.7l-1.9 1.1-2.4-2.4 1.1-1.9a7.5 7.5 0 0 1-.7-1.7l-2.1-.5v-3.4l2.1-.5a7.5 7.5 0 0 1 .7-1.7L3.8 6.9l2.4-2.4 1.9 1.1a7.5 7.5 0 0 1 1.7-.7z" />
-                        <circle cx="12" cy="12" r="3.1" />
-                    </svg>
-                </button>
+            {/* Mobile player header - fullscreen portal */}
+            {playerElement &&
+                createPortal(
+                    <div
+                                    dir={isPersian ? "ltr" : "rtl"}
+                                    className="mobile-player-header pointer-events-none absolute left-2 right-2 top-2 z-20 flex flex-row items-center justify-between gap-3"
+                                >
+                                    {/* Settings button - Left */}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            playerRef.current?.trigger("settingsbuttonclick")
+                                        }
+                                        onPointerDown={(event) => event.stopPropagation()}
+                                        onTouchEnd={(event) => event.stopPropagation()}
+                                        aria-label={isPersian ? "تنظیمات" : "Settings"}
+                                        title={isPersian ? "تنظیمات" : "Settings"}
+                                        data-accent-hover="off"
+                                        className="pointer-events-auto flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80 active:bg-black"
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-5 w-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M10.3 2.8h3.4l.5 2.1a7.5 7.5 0 0 1 1.7.7l1.9-1.1 2.4 2.4-1.1 1.9a7.5 7.5 0 0 1 .7 1.7l2.1.5v3.4l-2.1.5a7.5 7.5 0 0 1-.7 1.7l1.1 1.9-2.4 2.4-1.9-1.1a7.5 7.5 0 0 1-1.7.7l-.5 2.1h-3.4l-.5-2.1a7.5 7.5 0 0 1-1.7-.7l-1.9 1.1-2.4-2.4 1.1-1.9a7.5 7.5 0 0 1-.7-1.7l-2.1-.5v-3.4l2.1-.5a7.5 7.5 0 0 1 .7-1.7L3.8 6.9l2.4-2.4 1.9 1.1a7.5 7.5 0 0 1 1.7-.7z" />
+                                            <circle cx="12" cy="12" r="3.1" />
+                                        </svg>
+                                    </button>
 
-                {/* Video title - Right */}
-                <div
-                    dir={isPersian ? "rtl" : "ltr"}
-                    title={title}
-                    className="pointer-events-auto min-w-0 flex-1 overflow-hidden"
-                >
-                    <span
-                        className={`block truncate text-sm font-semibold text-white drop-shadow-md ${
-                            isPersian ? "text-right" : "text-left"
-                        }`}
-                    >
-                        {displayTitle}
-                    </span>
-                </div>
-            </div>
-
+                                    {/* Video title - Right */}
+                                    <div
+                                        dir={isPersian ? "rtl" : "ltr"}
+                                        title={title}
+                                        className="pointer-events-auto min-w-0 flex-1 overflow-hidden"
+                                    >
+                                        <span
+                                            className={`block truncate text-sm font-semibold text-white drop-shadow-md ${
+                                                isPersian ? "text-right" : "text-left"
+                                            }`}
+                                        >
+                                            {displayTitle}
+                                        </span>
+                                    </div>
+                                </div>,
+                    playerElement
+                )}
             {/* Play / Pause feedback */}
             {playbackFeedback && (
                 <div
@@ -1913,6 +2090,46 @@ export default function VideoPlayer({
                                             {isPersian ? "‹" : "›"}
                                         </span>
                                     </button>
+                                    {/* Loop video */}
+                                    <button
+                                        type="button"
+                                        onClick={handleLoopToggle}
+                                        aria-pressed={isLoopEnabled}
+                                        dir={isPersian ? "rtl" : "ltr"}
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            flexWrap: "nowrap",
+                                            alignItems: "center",
+                                            width: "100%",
+                                        }}
+                                        className={`cursor-pointer gap-2 rounded-lg px-2.5 py-2.5 text-start transition-colors hover:bg-white/10 active:bg-white/20 sm:gap-3 sm:px-3 sm:py-3 ${isLoopEnabled ? "bg-white/10" : ""}`}
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-5 w-5 shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="m17 2 4 4-4 4" />
+                                            <path d="M3 11V9a3 3 0 0 1 3-3h15" />
+                                            <path d="m7 22-4-4 4-4" />
+                                            <path d="M21 13v2a3 3 0 0 1-3 3H3" />
+                                        </svg>
+
+                                        <span className="shrink-0 whitespace-nowrap text-sm font-medium">
+                                            {isPersian ? "\u062A\u06A9\u0631\u0627\u0631 \u0648\u06CC\u062F\u0626\u0648" : "Loop video"}
+                                        </span>
+
+                                        <span className={`min-w-0 flex-1 truncate text-end text-xs ${isLoopEnabled ? "text-emerald-300" : "text-white/55"}`}>
+                                            {isLoopEnabled
+                                                ? isPersian ? "\u0631\u0648\u0634\u0646" : "On"
+                                                : isPersian ? "\u062E\u0627\u0645\u0648\u0634" : "Off"}
+                                        </span>
+                                    </button>
                                 </div>
                             )}
 
@@ -2051,19 +2268,20 @@ export default function VideoPlayer({
                     playerElement
                 )}
 
-            {skipFeedback && (
+            {skipFeedback && playerElement && createPortal(
                 <div
                     key={skipFeedback.id}
-                    className={`pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/70 px-5 py-3 text-white ${
+                    className={`pointer-events-none absolute top-1/2 z-[60] -translate-y-1/2 rounded-full bg-black/70 px-6 py-4 text-3xl font-bold text-white shadow-lg sm:px-7 sm:py-4 sm:text-4xl ${
                         skipFeedback.direction === "backward"
                             ? "left-[15%]"
                             : "right-[15%]"
                     }`}
                 >
                     {skipFeedback.direction === "backward"
-                        ? "⏪ −10s"
-                        : "+10s ⏩"}
-                </div>
+                        ? "−10s"
+                        : "+10s"}
+                </div>,
+                playerElement
             )}
 
             {isFastForwarding && (

@@ -287,7 +287,7 @@ export default function LiveReportsList({
     return (
         <section
             dir={isPersian ? "rtl" : "ltr"}
-            className="mt-8 rounded-xl border border-gray-200 bg-white p-5 dark:border-[#303030] dark:bg-[#181818] sm:p-6"
+            className="mt-6 rounded-xl border border-gray-200 bg-white p-3 dark:border-[#303030] dark:bg-[#181818] sm:mt-8 sm:p-6"
         >
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -393,7 +393,7 @@ export default function LiveReportsList({
                         : "No live reports found."}
                 </p>
             ) : (
-                <div className="space-y-5">
+                <div className="space-y-3 sm:space-y-5">
                     {reports.map((report) => {
                         const statusStyle =
                             report.status === "pending"
@@ -405,9 +405,9 @@ export default function LiveReportsList({
                         return (
                             <article
                                 key={report.id}
-                                className="rounded-xl border border-gray-200 p-5 dark:border-[#303030]"
+                                className="mx-0.5 rounded-lg border border-gray-200 p-3 dark:border-[#303030] sm:mx-0 sm:rounded-xl sm:p-5"
                             >
-                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                                     <h3 className="font-semibold">
                                         {isPersian ? "گزارش" : "Report"} #
                                         {formatNumber(report.id)}
@@ -420,7 +420,7 @@ export default function LiveReportsList({
                                     </span>
                                 </div>
 
-                                <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                                <div className="mt-3 grid gap-2 text-xs sm:mt-4 sm:gap-3 sm:text-sm sm:grid-cols-2">
                                     <p>
                                         <span className="text-gray-500">
                                             {isPersian ? "عنوان لایو: " : "Live stream: "}
@@ -463,17 +463,17 @@ export default function LiveReportsList({
                                 </div>
 
                                 {report.details && (
-                                    <div className="mt-4">
+                                    <div className="mt-3 sm:mt-4">
                                         <p className="text-sm font-medium">
                                             {t.additionalDetails}
                                         </p>
-                                        <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm dark:bg-[#222222]">
+                                        <p className="mt-1.5 whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-xs dark:bg-[#222222] sm:mt-2 sm:p-4 sm:text-sm">
                                             {report.details}
                                         </p>
                                     </div>
                                 )}
 
-                                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                                <p className="mt-3 text-[11px] text-gray-500 dark:text-gray-400 sm:mt-4 sm:text-xs">
                                     {t.submitted} {formatDate(report.created_at)}
                                 </p>
 
@@ -484,14 +484,14 @@ export default function LiveReportsList({
                                 )}
 
                                 {report.status === "pending" && (
-                                    <div className="mt-5 flex flex-wrap gap-3">
+                                    <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-3">
                                         <button
                                             type="button"
                                             disabled={updatingId !== null}
                                             onClick={() =>
                                                 void changeStatus(report.id, "reviewed")
                                             }
-                                            className="accent-button rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="accent-button rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
                                         >
                                             {updatingId === report.id
                                                 ? t.updating
@@ -504,7 +504,7 @@ export default function LiveReportsList({
                                             onClick={() =>
                                                 void changeStatus(report.id, "dismissed")
                                             }
-                                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#444444] dark:hover:bg-[#252525]"
+                                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#444444] dark:hover:bg-[#252525] sm:px-4 sm:py-2 sm:text-sm"
                                         >
                                             {t.dismissReport}
                                         </button>
@@ -517,7 +517,7 @@ export default function LiveReportsList({
             )}
 
             {!loading && !error && totalCount > 0 && (
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-5 dark:border-[#303030]">
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-4 dark:border-[#303030] sm:mt-8 sm:gap-4 sm:pt-5">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         {t.page} {formatNumber(currentPage)} {t.of}{" "}
                         {formatNumber(totalPages)} ·{" "}

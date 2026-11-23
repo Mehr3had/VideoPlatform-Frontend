@@ -50,6 +50,7 @@ body {
 
 .accent-button:hover {
   background-color: var(--accent-hover);
+  filter: brightness(0.92);
 }
 
 /* Keep uncovered areas of the video player black */
@@ -132,11 +133,9 @@ body {
 
 /* Custom Subtitle Styling */
 .video-js .vjs-text-track-display {
-    display: flex !important;
-    align-items: flex-end !important;
-    justify-content: center !important;
+    /* Preserve Video.js aspect-ratio and orientation positioning. */
+    text-align: center !important;
     bottom: 65px !important;
-    width: 100% !important;
     pointer-events: none;
 }
 
@@ -157,7 +156,6 @@ body {
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
 }
-
 /* Custom Video Time Display */
 .video-js .vjs-time-display-button.vjs-button {
     display: flex !important;
@@ -323,15 +321,15 @@ body {
     }
 }
 
-/* Hide Video.js settings button on mobile */
-@media (max-width: 639px) {
+/* Keep the desktop settings control hidden on narrow screens and touch devices. */
+@media (max-width: 639px), (hover: none) and (pointer: coarse) {
     .video-js .vjs-desktop-settings-button {
         display: none !important;
     }
 }
 
-/* Hide mobile header on desktop */
-@media (min-width: 640px) {
+/* Hide the mobile header only on desktop devices with a precise pointer. */
+@media (min-width: 640px) and (hover: hover) and (pointer: fine) {
     .mobile-player-header {
         display: none !important;
     }
@@ -368,4 +366,118 @@ body {
 
 .playback-feedback-icon {
     animation: playback-feedback-pop 600ms ease-out forwards;
+}
+
+@keyframes trending-dot-fill {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+/* User-customizable accent interaction feedback */
+button:not(.accent-button):not(:disabled):not([data-accent-hover="off"]):not([data-vjs-player] button):is(:hover, :active, :focus-visible),
+a[role="menuitem"]:not([data-accent-hover="off"]):not([data-vjs-player] a[role="menuitem"]):is(:hover, :active, :focus-visible) {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+/* Accent feedback for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  button:not(.accent-button):not(:disabled):not([data-accent-hover="off"]):not([data-vjs-player] button):not([class*="text-red-"]):not([class*="bg-red-"]):active,
+  a[role="menuitem"]:not([data-accent-hover="off"]):not([data-vjs-player] a[role="menuitem"]):active {
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+  }
+}
+
+/* Stronger accent feedback for pointer hover */
+@media (hover: hover) and (pointer: fine) {
+  button:not(.accent-button):not(:disabled):not([data-accent-hover="off"]):not([data-vjs-player] button):not([class*="text-red-"]):not([class*="bg-red-"]):hover,
+  a[role="menuitem"]:not([data-accent-hover="off"]):not([data-vjs-player] a[role="menuitem"]):hover {
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+  }
+}
+/* Shared laptop-style feedback for touch presses */
+button:not(.accent-button):not(:disabled):not([data-accent-hover="off"]):not([data-vjs-player] button):not([class*="text-red-"]):not([class*="bg-red-"]):active,
+a[role="menuitem"]:not([data-accent-hover="off"]):not([data-vjs-player] a[role="menuitem"]):active {
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+/* Universal accent press effect */
+button:not(.accent-button):not(:disabled):not([data-accent-hover="off"]):not([data-vjs-player] button):not([class*="text-red-"]):not([class*="bg-red-"]):active,
+a[role="menuitem"]:not([data-accent-hover="off"]):not([data-vjs-player] a[role="menuitem"]):active {
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+/* React-controlled press feedback for appearance settings */
+button[data-pressed="true"]:not([data-press-kind="swatch"]) {
+    background-color: var(--accent) !important;
+    color: #ffffff !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent) !important;
+    transform: scale(0.97);
+    transition: background-color 100ms ease, color 100ms ease, transform 100ms ease, box-shadow 100ms ease;
+}
+
+button[data-pressed="true"][data-press-kind="swatch"] {
+    outline: 3px solid var(--accent) !important;
+    outline-offset: 4px !important;
+    transform: scale(0.88);
+    transition: outline 100ms ease, transform 100ms ease;
+}
+/* Dedicated accent interaction for Navbar menu actions */
+.navbar-accent-action {
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 100ms ease;
+}
+
+.navbar-accent-action:hover,
+.navbar-accent-action:focus-visible {
+    background-color: color-mix(in srgb, var(--accent) 13%, transparent) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent) !important;
+}
+
+.navbar-accent-action:active {
+    background-color: color-mix(in srgb, var(--accent) 25%, transparent) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    box-shadow:
+        inset 0 0 0 1px var(--accent),
+        0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent) !important;
+    transform: scale(0.98);
+}
+
+/* Landscape phone-sized viewport override */
+@media (max-width: 960px) and (orientation: landscape) {
+    .mobile-player-header {
+        display: flex !important;
+    }
+
+    .video-js .vjs-desktop-settings-button {
+        display: none !important;
+    }
+}
+
+/* Landscape mobile settings button position */
+@media (max-width: 960px) and (orientation: landscape) {
+    .mobile-player-header > button:first-child {
+        position: relative;
+        inset-inline-start: 0.8cm;
+    }
 }

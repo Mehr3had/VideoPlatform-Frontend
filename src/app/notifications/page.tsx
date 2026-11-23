@@ -76,19 +76,11 @@ export default function NotificationsPage() {
                         {t.subtitle}
                     </p>
 
-                    <Link
-                        href="/"
-                        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030]"
-                    >
-                        <span aria-hidden="true">
-                            {isPersian ? "→" : "←"}
-                        </span>
-                        {t.backHome}
-                    </Link>
+
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <span className="whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-4 py-2 text-sm font-semibold text-[var(--accent)]">
+                <div className="flex w-full min-w-0 flex-nowrap items-center gap-0.5 sm:w-auto sm:flex-wrap sm:gap-3 lg:flex-nowrap">
+                    <span role="status" aria-label={`${unreadCount} ${t.unread}`} title={`${unreadCount} ${t.unread}`} className="shrink-0 whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-2 py-[7px] text-[12px] font-semibold text-[var(--accent)] sm:px-4 sm:py-2 sm:text-sm">
                         {unreadCount} {t.unread}
                     </span>
 
@@ -97,11 +89,15 @@ export default function NotificationsPage() {
                             type="button"
                             onClick={markAllAsRead}
                             disabled={updatingId !== null}
-                            className="accent-button whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50"
+                            aria-label={updatingId === -1 ? t.updating : t.markAllRead} title={updatingId === -1 ? t.updating : t.markAllRead} className="accent-button shrink-0 whitespace-nowrap rounded-lg px-2 py-[7px] text-[12px] font-medium transition disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
                         >
-                            {updatingId === -1
-                                ? t.updating
-                                : t.markAllRead}
+                            {updatingId === -1 ? (
+                                <span aria-hidden="true">…</span>
+                            ) : (
+                                <>
+                                    {t.markAllRead}
+                                </>
+                            )}
                         </button>
                     )}
 
@@ -110,13 +106,30 @@ export default function NotificationsPage() {
                             type="button"
                             onClick={() => setDeleteAction({ type: "all" })}
                             disabled={updatingId !== null}
-                            className="whitespace-nowrap rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
+                            aria-label={updatingId === -1 ? t.updating : t.deleteAll} title={updatingId === -1 ? t.updating : t.deleteAll} className="shrink-0 whitespace-nowrap rounded-lg border border-red-200 px-2 py-[7px] text-[12px] font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50 sm:px-4 sm:py-2 sm:text-sm"
                         >
-                            {updatingId === -1 ? t.updating : t.deleteAll}
+                            {updatingId === -1 ? (
+                                <span aria-hidden="true">…</span>
+                            ) : (
+                                <>
+                                    {t.deleteAll}
+                                </>
+                            )}
                         </button>
                     )}
+                            <Link
+                                href="/"
+                                aria-label={t.backHome}
+                                className={`inline-flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-gray-300 bg-white text-lg font-semibold text-gray-700 shadow-sm transition-colors duration-150 hover:border-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--accent)]/20 active:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)] dark:active:border-[var(--accent)] dark:active:text-[var(--accent)] ${isPersian ? "ms-37 sm:ms-0" : "ms-24 sm:ms-0"}`}
+                            >
+                                <span aria-hidden="true">
+                                    {isPersian ? "←" : "→"}
+                                </span>
+
+                            </Link>
                 </div>
             </div>
+
 
             {error && (
                 <div
@@ -161,7 +174,7 @@ export default function NotificationsPage() {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                     {notifications.map((notification) => (
                         <NotificationItem
                             key={notification.id}

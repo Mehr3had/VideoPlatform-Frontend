@@ -55,7 +55,7 @@ export default function AppearanceSettings() {
                         aria-pressed={mode === "light"}
                         className={`rounded-lg border px-4 py-2 text-sm ${
                             mode === "light"
-                                ? "border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-950"
+                                ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
                                 : "border-gray-300 text-gray-700 dark:border-[#404040] dark:text-gray-300"
                         }`}
                     >
@@ -68,7 +68,7 @@ export default function AppearanceSettings() {
                         aria-pressed={mode === "dark"}
                         className={`rounded-lg border px-4 py-2 text-sm ${
                             mode === "dark"
-                                ? "border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-950"
+                                ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
                                 : "border-gray-300 text-gray-700 dark:border-[#404040] dark:text-gray-300"
                         }`}
                     >
@@ -91,6 +91,7 @@ export default function AppearanceSettings() {
                             title={item.name}
                             aria-label={item.name}
                             aria-pressed={accent === item.value}
+                            data-accent-hover="off"
                             className={`h-10 w-10 rounded-full border-2 ${
                                 accent === item.value
                                     ? "border-gray-900 ring-2 ring-gray-400 ring-offset-2 dark:border-white dark:ring-offset-[#181818]"
@@ -121,7 +122,7 @@ export default function AppearanceSettings() {
                                 | "blue"
                         )
                     }
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-violet-500 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
                 >
                     <option value="default">
                         {isPersian ? "پیش‌فرض" : "Default"}

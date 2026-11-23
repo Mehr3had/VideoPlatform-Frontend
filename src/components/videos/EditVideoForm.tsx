@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
@@ -43,14 +44,35 @@ export default function EditVideoForm({
     const { language, isPersian } = useLanguage();
     const t = translations[language].editVideo;
 
-    const handleVideoChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setVideoFile(event.target.files?.[0] ?? null);
+    const [activePicker, setActivePicker] = useState<"video" | "thumbnail" | null>(null);
+    const [videoFileName, setVideoFileName] = useState("");
+    const [thumbnailFileName, setThumbnailFileName] = useState("");
+
+    const videoGalleryInputRef = useRef<HTMLInputElement | null>(null);
+    const videoCameraInputRef = useRef<HTMLInputElement | null>(null);
+    const videoFilesInputRef = useRef<HTMLInputElement | null>(null);
+    const thumbnailGalleryInputRef = useRef<HTMLInputElement | null>(null);
+    const thumbnailCameraInputRef = useRef<HTMLInputElement | null>(null);
+
+    const openFilePicker = (input: HTMLInputElement | null) => {
+        setActivePicker(null);
+        input?.click();
     };
 
-    const handleThumbnailChange = (
+        const handleVideoChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.currentTarget.files?.[0] ?? null;
+        setVideoFile(file);
+        setVideoFileName(file?.name ?? "");
+        event.currentTarget.value = "";
+    };
+
+        const handleThumbnailChange = (
         event: ChangeEvent<HTMLInputElement>
     ) => {
-        setThumbnail(event.target.files?.[0] ?? null);
+        const file = event.currentTarget.files?.[0] ?? null;
+        setThumbnail(file);
+        setThumbnailFileName(file?.name ?? "");
+        event.currentTarget.value = "";
     };
 
     return (
@@ -69,6 +91,54 @@ export default function EditVideoForm({
             )}
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+                {/* Hidden native inputs for mobile file selection */}
+                <input
+                    ref={videoGalleryInputRef}
+                    type="file"
+                    accept="video/*"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={handleVideoChange}
+                />
+                <input
+                    ref={videoCameraInputRef}
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={handleVideoChange}
+                />
+                <input
+                    ref={videoFilesInputRef}
+                    type="file"
+                    accept="video/*"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={handleVideoChange}
+                />
+                <input
+                    ref={thumbnailGalleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={handleThumbnailChange}
+                />
+                <input
+                    ref={thumbnailCameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={handleThumbnailChange}
+                />
                 <div>
                     <label
                         htmlFor="edit-video-title"
@@ -134,7 +204,37 @@ export default function EditVideoForm({
                     />
                 </div>
 
-                <div>
+                <div className="sm:hidden">
+                    <button
+                        type="button"
+                        dir={isPersian ? "rtl" : "ltr"}
+                        onClick={() => setActivePicker("video")}
+                        aria-label={t.replaceVideo}
+                        className="flex w-full items-center gap-3 rounded-xl border border-gray-300 bg-white p-3 text-start transition hover:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020]"
+                    >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="14" rx="3" />
+                                <path d="m10 9 5 3-5 3z" />
+                            </svg>
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {t.replaceVideo}
+                            </span>
+                            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                                {videoFileName || (isPersian ? "برای انتخاب منبع ضربه بزنید" : "Tap to choose a source")}
+                            </span>
+                        </span>
+
+                        <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                            <path d={isPersian ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="hidden sm:block">
                     <label
                         htmlFor="edit-video-file"
                         className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -151,7 +251,38 @@ export default function EditVideoForm({
                     />
                 </div>
 
-                <div>
+                <div className="sm:hidden">
+                    <button
+                        type="button"
+                        dir={isPersian ? "rtl" : "ltr"}
+                        onClick={() => setActivePicker("thumbnail")}
+                        aria-label={t.replaceThumbnail}
+                        className="flex w-full items-center gap-3 rounded-xl border border-gray-300 bg-white p-3 text-start transition hover:border-[var(--accent)] dark:border-[#404040] dark:bg-[#202020]"
+                    >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="3" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <path d="m21 15-5-5L5 21" />
+                            </svg>
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {t.replaceThumbnail}
+                            </span>
+                            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                                {thumbnailFileName || (isPersian ? "برای انتخاب منبع ضربه بزنید" : "Tap to choose a source")}
+                            </span>
+                        </span>
+
+                        <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                            <path d={isPersian ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="hidden sm:block">
                     <label
                         htmlFor="edit-video-thumbnail"
                         className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -187,6 +318,154 @@ export default function EditVideoForm({
                     </button>
                 </div>
             </form>
+            {/* Mobile file source picker */}
+            {activePicker !== null && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 py-6 sm:hidden"
+                    onClick={() => setActivePicker(null)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="edit-upload-source-title"
+                        dir={isPersian ? "rtl" : "ltr"}
+                        className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-[#404040] dark:bg-[#181818]"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="mb-5 flex items-center justify-between gap-3">
+                            <h2
+                                id="edit-upload-source-title"
+                                className="text-base font-bold text-gray-900 dark:text-gray-100"
+                            >
+                                {activePicker === "video"
+                                    ? isPersian ? "انتخاب منبع ویدئو" : "Choose video source"
+                                    : isPersian ? "انتخاب منبع تامبنیل" : "Choose thumbnail source"}
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setActivePicker(null)}
+                                aria-label={isPersian ? "بستن" : "Close"}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xl text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {activePicker === "video" ? (
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => openFilePicker(videoGalleryInputRef.current)}
+                                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-start transition active:scale-[0.99] dark:border-[#404040] dark:bg-[#202020]"
+                                >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <rect x="3" y="3" width="18" height="18" rx="3" />
+                                            <path d="M10 9v6l5-3z" />
+                                        </svg>
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {isPersian ? "گالری ویدئوها" : "Video gallery"}
+                                        </span>
+                                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                            {isPersian ? "انتخاب ویدئوی موجود در گوشی" : "Choose a video from your gallery"}
+                                        </span>
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => openFilePicker(videoCameraInputRef.current)}
+                                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-start transition active:scale-[0.99] dark:border-[#404040] dark:bg-[#202020]"
+                                >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <path d="M14 4h-4L8 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-4z" />
+                                            <circle cx="12" cy="13" r="4" />
+                                        </svg>
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {isPersian ? "ضبط با دوربین" : "Record with camera"}
+                                        </span>
+                                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                            {isPersian ? "ضبط یک ویدئوی جدید" : "Record a new video"}
+                                        </span>
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => openFilePicker(videoFilesInputRef.current)}
+                                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-start transition active:scale-[0.99] dark:border-[#404040] dark:bg-[#202020]"
+                                >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                                            <path d="M12 10v6m-3-3 3-3 3 3" />
+                                        </svg>
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {isPersian ? "فایل‌ها و خروجی InShot" : "Files and InShot exports"}
+                                        </span>
+                                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                            {isPersian ? "انتخاب از فایل‌ها و برنامه‌های در دسترس گوشی" : "Browse files and available app sources"}
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => openFilePicker(thumbnailGalleryInputRef.current)}
+                                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-start transition active:scale-[0.99] dark:border-[#404040] dark:bg-[#202020]"
+                                >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <rect x="3" y="3" width="18" height="18" rx="3" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" />
+                                            <path d="m21 15-5-5L5 21" />
+                                        </svg>
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {isPersian ? "گالری تصاویر" : "Photo gallery"}
+                                        </span>
+                                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                            {isPersian ? "انتخاب عکس موجود" : "Choose an existing photo"}
+                                        </span>
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => openFilePicker(thumbnailCameraInputRef.current)}
+                                    className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-start transition active:scale-[0.99] dark:border-[#404040] dark:bg-[#202020]"
+                                >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <path d="M14 4h-4L8 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-4z" />
+                                            <circle cx="12" cy="13" r="4" />
+                                        </svg>
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {isPersian ? "گرفتن عکس با دوربین" : "Take a photo"}
+                                        </span>
+                                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                            {isPersian ? "ثبت عکس جدید برای تامبنیل" : "Capture a new thumbnail photo"}
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

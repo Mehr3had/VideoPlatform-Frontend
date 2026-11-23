@@ -273,12 +273,14 @@ export default function CommentItem({
             dir={isPersian ? "rtl" : "ltr"}
             className={
                 depth > 0
-                    ? "ml-5 border-l-2 border-gray-200 pl-3 dark:border-[#303030]"
+                    ? (isPersian
+                        ? "mr-3 border-r-2 border-gray-200 pr-2 dark:border-[#303030] sm:mr-5 sm:pr-3"
+                        : "ml-3 border-l-2 border-gray-200 pl-2 dark:border-[#303030] sm:ml-5 sm:pl-3")
                     : ""
             }
         >
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818]">
-                <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-[#303030] dark:bg-[#181818] sm:p-4">
+                <div className="flex items-start gap-2 sm:gap-3">
                     <a
                         href={`/profile/${comment.user_id}`}
                         className="shrink-0"
@@ -287,10 +289,10 @@ export default function CommentItem({
                             <img
                                 src={comment.profile_image}
                                 alt={comment.username}
-                                className="h-10 w-10 rounded-full object-cover"
+                                className="h-9 w-9 rounded-full object-cover sm:h-10 sm:w-10"
                             />
                         ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-700 dark:bg-[#303030] dark:text-gray-200">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-700 dark:bg-[#303030] dark:text-gray-200 sm:h-10 sm:w-10 sm:text-sm">
                                 {(comment.username || "?")
                                     .charAt(0)
                                     .toUpperCase()}
@@ -299,11 +301,11 @@ export default function CommentItem({
                     </a>
 
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div>
                                 <a
                                     href={`/profile/${comment.user_id}`}
-                                    className="text-sm font-semibold text-gray-900 dark:text-gray-100"
+                                    className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 sm:text-sm"
                                 >
                                     {comment.username}
                                 </a>
@@ -318,13 +320,13 @@ export default function CommentItem({
                                         }
                                         aria-label={t.commentOptions}
                                         aria-expanded={showOptions}
-                                        className="rounded-full px-2 py-1 text-lg leading-none text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#303030]"
+                                        className="rounded-full px-1.5 py-0.5 text-base leading-none text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#303030] sm:px-2 sm:py-1 sm:text-lg"
                                     >
                                         ⋯
                                     </button>
 
                                     {showOptions && (
-                                        <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-[#303030] dark:bg-[#202020]">
+                                        <div className={`absolute right-0 top-full z-20 mt-1 w-40 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-[#303030] dark:bg-[#202020] sm:w-44 ${isPersian ? "max-sm:left-0 max-sm:right-auto" : ""}`}>
                                             {currentUserId === comment.user_id && (
                                                 <>
                                                     <button
@@ -370,7 +372,7 @@ export default function CommentItem({
                                                         setEditingCommentId(null);
                                                         setShowOptions(false);
                                                     }}
-                                                    className="w-full rounded-md px-3 py-2 text-start text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030]"
+                                                    className="block w-full min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] rounded-md px-2 py-1.5 text-start text-xs leading-5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#303030] sm:px-3 sm:py-2 sm:text-sm"
                                                 >
                                                     🚩 {t.reportComment}
                                                 </button>
@@ -381,7 +383,7 @@ export default function CommentItem({
                             )}
                         </div>
 
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
                             {comment.created_at
                                 ? getRelativeTime(comment.created_at)
                                 : ""}
@@ -639,7 +641,7 @@ export default function CommentItem({
                         )}
 
                         {!comment.is_removed && (
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <div className="mt-2 flex flex-wrap items-center gap-1 sm:mt-3 sm:gap-2">
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -648,7 +650,7 @@ export default function CommentItem({
                                     aria-pressed={comment.is_liked}
                                     aria-label={`${t.like} ${comment.likes_count}`}
                                     disabled={reactingCommentIds.includes(comment.id)}
-                                    className={`rounded-lg px-2 py-1 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                    className={`rounded-lg px-1.5 py-0.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:px-2 sm:py-1 sm:text-sm ${
                                         comment.is_liked
                                             ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
                                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
@@ -665,7 +667,7 @@ export default function CommentItem({
                                     aria-pressed={comment.is_disliked}
                                     aria-label={`${t.dislike} ${comment.dislikes_count}`}
                                     disabled={reactingCommentIds.includes(comment.id)}
-                                    className={`rounded-lg px-2 py-1 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                    className={`rounded-lg px-1.5 py-0.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:px-2 sm:py-1 sm:text-sm ${
                                         comment.is_disliked
                                             ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
                                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
@@ -677,7 +679,7 @@ export default function CommentItem({
                                 <button
                                     type="button"
                                     onClick={() => onReplyClick(comment.id)}
-                                    className="rounded-lg px-2 py-1 text-sm text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030]"
+                                    className="rounded-lg px-1.5 py-0.5 text-xs text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#303030] sm:px-2 sm:py-1 sm:text-sm"
                                 >
                                     {t.reply}
                                 </button>
@@ -686,10 +688,10 @@ export default function CommentItem({
 
                         {!comment.is_removed &&
                             reportingCommentId === comment.id && (
-                                <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-[#303030] dark:bg-[#181818]">
+                                <div className="mt-2 rounded-xl border border-gray-200 bg-white p-3 dark:border-[#303030] dark:bg-[#181818] sm:mt-3 sm:p-4">
                                     <label
                                         htmlFor={`report-reason-${comment.id}`}
-                                        className="mb-1 block text-start text-sm font-medium text-gray-800 dark:text-gray-200"
+                                        className="mb-1 block text-start text-xs font-medium text-gray-800 dark:text-gray-200 sm:text-sm"
                                     >
                                         {t.reason}
                                     </label>
@@ -700,7 +702,7 @@ export default function CommentItem({
                                         onChange={(event) =>
                                             setReportReason(event.target.value)
                                         }
-                                        className="mb-3 w-full rounded-lg border border-gray-300 bg-white p-2 text-start text-sm text-gray-900 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                                        className="mb-2 w-full rounded-lg border border-gray-300 bg-white p-1.5 text-start text-xs text-gray-900 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 sm:mb-3 sm:p-2 sm:text-sm"
                                     >
                                         <option value="spam">{t.spam}</option>
                                         <option value="harassment">
@@ -720,7 +722,7 @@ export default function CommentItem({
 
                                     <label
                                         htmlFor={`report-details-${comment.id}`}
-                                        className="mb-1 block text-start text-sm font-medium text-gray-800 dark:text-gray-200"
+                                        className="mb-1 block text-start text-xs font-medium text-gray-800 dark:text-gray-200 sm:text-sm"
                                     >
                                         {t.additionalDetails}
                                     </label>
@@ -734,7 +736,7 @@ export default function CommentItem({
                                             )
                                         }
                                         dir="auto"
-                                        className="mb-3 w-full rounded-lg border border-gray-300 bg-white p-3 text-start text-sm text-gray-900 outline-none focus:border-red-600 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100"
+                                        className="mb-2 w-full rounded-lg border border-gray-300 bg-white p-2 text-start text-xs text-gray-900 outline-none focus:border-red-600 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-100 sm:mb-3 sm:p-3 sm:text-sm"
                                         maxLength={500}
                                         rows={3}
                                     />
@@ -746,7 +748,7 @@ export default function CommentItem({
                                             onClick={() =>
                                                 setReportingCommentId(null)
                                             }
-                                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030]"
+                                            className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-[#404040] dark:text-gray-200 dark:hover:bg-[#303030] sm:px-3 sm:py-1.5 sm:text-sm"
                                         >
                                             {t.cancel}
                                         </button>
@@ -761,7 +763,7 @@ export default function CommentItem({
                                                     reportDetails
                                                 )
                                             }
-                                            className="rounded-lg bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="rounded-lg bg-red-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3 sm:py-1.5 sm:text-sm"
                                         >
                                             {submittingReport
                                                 ? t.submitting

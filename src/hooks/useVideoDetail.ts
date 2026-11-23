@@ -53,6 +53,7 @@ export function useVideoDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [submittingReport, setSubmittingReport] = useState(false);
+    const [submittingVideoReport, setSubmittingVideoReport] = useState(false);
     const [reactingCommentIds, setReactingCommentIds] = useState<number[]>([]);
     const reactingCommentIdsRef = useRef(new Set<number>());
 
@@ -652,6 +653,60 @@ export function useVideoDetail() {
         }
     };
 
+
+    const handleReportVideo = async (
+        reason: string,
+        details: string
+    ): Promise<boolean> => {
+        const token = await ensureAccessToken();
+
+        if (!token) {
+            setCommentError(t.loginRequired);
+            return false;
+        }
+
+        if (details.length > 500) {
+            setCommentError(t.detailsTooLong);
+            return false;
+        }
+
+        try {
+            setSubmittingVideoReport(true);
+
+            const response = await apiFetch(
+                `${API}/videos/${videoId}/report/`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        reason,
+                        details: details.trim(),
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    setCommentError(t.videoAlreadyReported);
+                } else {
+                    setCommentError(data.error || t.reportFailed);
+                }
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Report video error:", error);
+            setCommentError(t.generalError);
+            return false;
+        } finally {
+            setSubmittingVideoReport(false);
+        }
+    };
     return {
         videoId,
         video,
@@ -688,6 +743,8 @@ export function useVideoDetail() {
         handleDeleteComment,
         submittingReport,
         handleReportComment,
+        submittingVideoReport,
+        handleReportVideo,
         reactingCommentIds,
     };
 }

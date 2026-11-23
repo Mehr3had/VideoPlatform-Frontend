@@ -9,6 +9,9 @@ interface Video {
     title: string;
     thumbnail?: string | null;
     username: string;
+    user_id?: number;
+    profile_image?: string | null;
+    created_at?: string;
     views_count: number;
     duration: number;
     category_name?: string | null;
@@ -22,6 +25,7 @@ export interface ActiveLiveStream {
     owner: {
         id: number;
         username: string;
+        profile_image?: string | null;
     };
     started_at: string | null;
 }

@@ -190,10 +190,10 @@ export default function LiveWatchPage() {
                         </p>
 
                         <Link
-                            href="/dashboard"
+                            href="/"
                             className="accent-button mt-6 inline-flex cursor-pointer items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition hover:brightness-110"
                         >
-                            {isFa ? "بازگشت به داشبورد" : "Back to dashboard"}
+                            {isFa ? "بازگشت به صفحه اصلی" : "Back to home"}
                         </Link>
                     </div>
                 </section>
@@ -211,22 +211,25 @@ export default function LiveWatchPage() {
             <section className={sectionClass}>
                 {/* Back button and live status */}
                 <div className="mb-5 flex items-center justify-between">
-                    <Link
-                        href="/dashboard"
-                        className="accent-button inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f0f0f]"
-                    >
-                        <span aria-hidden="true">
-                            {isFa ? "→" : "←"}
-                        </span>
-                        {isFa ? "بازگشت به داشبورد" : "Back to dashboard"}
-                    </Link>
-
-                    {isLive && (
+                    {isLive ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white">
                             <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                             {isFa ? "پخش زنده" : "LIVE"}
                         </span>
+                    ) : (
+                        <span aria-hidden="true" />
                     )}
+
+                    <Link
+                        href="/"
+                        aria-label={isFa ? "بازگشت به صفحه اصلی" : "Back to home"}
+                        title={isFa ? "صفحه اصلی" : "Home"}
+                        className="accent-button inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-sm font-semibold shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f0f0f]"
+                    >
+                        <span aria-hidden="true">
+                            {isFa ? "←" : "→"}
+                        </span>
+                    </Link>
                 </div>
 
                 {/* Main player and chat layout */}

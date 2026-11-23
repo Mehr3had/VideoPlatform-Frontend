@@ -1,6 +1,7 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
@@ -25,6 +26,22 @@ export default function EditProfileForm({
 }: EditProfileFormProps) {
     const { language, isPersian } = useLanguage();
     const t = translations[language].editProfile;
+
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const [profileImageName, setProfileImageName] = useState("");
+
+    const handleProfileImageChange = (
+        event: ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.currentTarget.files?.[0] ?? null;
+
+        if (file) {
+            setProfileImage(file);
+            setProfileImageName(file.name);
+        }
+
+        event.currentTarget.value = "";
+    };
 
     return (
         <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-[#181818] sm:p-8">
@@ -77,21 +94,64 @@ export default function EditProfileForm({
                 <div>
                     <label
                         htmlFor="profile-image"
-                        className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                        className="mb-2 hidden text-sm font-medium text-gray-700 dark:text-gray-300 sm:block"
                     >
                         {t.profileImage}
                     </label>
 
+                    <div className="mb-3 sm:hidden">
+                        <button
+                            type="button"
+                            dir={isPersian ? "rtl" : "ltr"}
+                            onClick={() => profileImageInputRef.current?.click()}
+                            className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-200 dark:hover:bg-[#303030]"
+                            aria-label={t.chooseImage}
+                        >
+                            <span className="flex items-center gap-2">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border" style={{ color: "var(--accent)", borderColor: "var(--accent)", backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)" }}><svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5 shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                                    <circle cx="8.5" cy="9" r="1.5" />
+                                    <path d="m21 15-5-5L5 21" />
+                                </svg></span>
+                                <span>{t.chooseImage}</span>
+                            </span>
+                            <svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d={isPersian ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+                            </svg>
+                        </button>
+
+                        {profileImageName && (
+                            <p dir="auto" className="mt-2 break-all text-xs text-gray-500 dark:text-gray-400">
+                                {profileImageName}
+                            </p>
+                        )}
+                    </div>
+
                     <input
+                        ref={profileImageInputRef}
                         id="profile-image"
                         type="file"
                         accept="image/*"
-                        onChange={(event) =>
-                            setProfileImage(
-                                event.target.files?.[0] ?? null
-                            )
-                        }
-                        className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040]"
+                        onChange={handleProfileImageChange}
+                        className="hidden w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:font-medium file:text-gray-700 hover:file:bg-gray-200 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:file:bg-[#303030] dark:file:text-gray-200 dark:hover:file:bg-[#404040] sm:block"
                     />
                 </div>
 

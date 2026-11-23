@@ -257,36 +257,39 @@ export default function LiveStudioPage() {
 
             <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
                 <header className="mb-8">
-                    <Link
-                        href="/dashboard"
-                        className="accent-button inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f0f0f]"
+                    <div
+                        className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
+                        style={{
+                            borderColor: `${accent}55`,
+                            color: accent,
+                            backgroundColor: `${accent}12`,
+                        }}
                     >
-                        <span aria-hidden="true">
-                            {isPersian ? "→" : "←"}
-                        </span>
-                        {t.backDashboard}
-                    </Link>
+                        <span className="h-2 w-2 rounded-full bg-current" />
+                        Live Streaming
+                    </div>
 
-                    <div className="mt-6">
-                        <div
-                            className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
-                            style={{
-                                borderColor: `${accent}55`,
-                                color: accent,
-                                backgroundColor: `${accent}12`,
-                            }}
-                        >
-                            <span className="h-2 w-2 rounded-full bg-current" />
-                            Live Streaming
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-3xl font-bold sm:text-4xl">
+                                {t.title}
+                            </h1>
+
+                            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+                                {t.subtitle}
+                            </p>
                         </div>
 
-                        <h1 className="text-3xl font-bold sm:text-4xl">
-                            {t.title}
-                        </h1>
-
-                        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-                            {t.subtitle}
-                        </p>
+                        <Link
+                            href="/dashboard"
+                            aria-label={isPersian ? "بازگشت به داشبورد" : "Back to dashboard"}
+                            title={isPersian ? "داشبورد" : "Dashboard"}
+                            className="accent-button inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f0f0f]"
+                        >
+                            <span aria-hidden="true">
+                                {isPersian ? "←" : "→"}
+                            </span>
+                        </Link>
                     </div>
                 </header>
 
@@ -364,13 +367,37 @@ export default function LiveStudioPage() {
                                             htmlFor="live-thumbnail"
                                             className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-3 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#282828]"
                                         >
+                                            {/* Mobile accent icon */}
+                                            <span
+                                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border sm:hidden"
+                                                style={{
+                                                    color: "var(--accent)",
+                                                    borderColor: "var(--accent)",
+                                                    backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                                                }}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.7"
+                                                    className="h-6 w-6"
+                                                >
+                                                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                                    <path d="m21 15-5-5L5 21" />
+                                                </svg>
+                                            </span>
+
+                                            {/* Original desktop icon */}
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 viewBox="0 0 24 24"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 strokeWidth="1.7"
-                                                className="h-10 w-10"
+                                                className="hidden h-10 w-10 sm:block"
                                             >
                                                 <rect x="3" y="3" width="18" height="18" rx="3" />
                                                 <circle cx="8.5" cy="8.5" r="1.5" />
@@ -615,6 +642,51 @@ export default function LiveStudioPage() {
                             <h2 className="text-xl font-bold">
                                 {t.obsTitle}
                             </h2>
+
+                            <div
+                                role="note"
+                                className="mt-4 flex items-start gap-3 rounded-xl border p-4 text-sm leading-7 text-gray-700 dark:text-gray-200"
+                                style={{
+                                    borderColor: "color-mix(in srgb, var(--accent) 40%, transparent)",
+                                    backgroundColor: "color-mix(in srgb, var(--accent) 8%, transparent)",
+                                }}
+                            >
+                                <span
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border"
+                                    style={{
+                                        color: "var(--accent)",
+                                        borderColor: "var(--accent)",
+                                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                                    }}
+                                >
+                                    <svg
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-5 w-5"
+                                    >
+                                        <rect x="3" y="4" width="18" height="13" rx="2" />
+                                        <path d="M2 21h20M8 17l-1 4m9-4 1 4" />
+                                    </svg>
+                                </span>
+
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-semibold">
+                                        {isFa
+                                            ? "برای ساخت و اجرای پخش زنده، از لپ‌تاپ و نرم‌افزار OBS استفاده کنید."
+                                            : "Use a laptop and OBS to create and run your live stream."}
+                                    </p>
+                                    <p className="mt-1 text-gray-500 dark:text-gray-400">
+                                        {isFa
+                                            ? "پخش مستقیم از گوشی در نسخه فعلی پشتیبانی نمی‌شود."
+                                            : "Direct live streaming from a phone is not supported in the current version."}
+                                    </p>
+                                </div>
+                            </div>
 
                             <ol className="mt-5 space-y-4">
                                 {t.obsSteps.map((step, index) => (

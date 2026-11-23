@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
     API,
-    apiFetch,
+    apiUpload,
     ensureAccessToken,
     clearAccessToken,
 } from "@/lib/api";
@@ -30,6 +30,8 @@ export default function useVideoUpload() {
     const [thumbnail, setThumbnail] = useState<File | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [uploadStage, setUploadStage] = useState<"uploading" | "processing" | null>(null);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -85,6 +87,8 @@ export default function useVideoUpload() {
         }
 
         setLoading(true);
+        setUploadProgress(0);
+        setUploadStage("uploading");
 
         const formData = new FormData();
         formData.append("title", title);
@@ -100,9 +104,18 @@ export default function useVideoUpload() {
         }
 
         try {
-            const response = await apiFetch(`${API}/videos/upload/`, {
+            const response = await apiUpload(`${API}/videos/upload/`, {
                 method: "POST",
                 body: formData,
+            }, {
+                onProgress: (percent) => {
+                    setUploadProgress(percent);
+                    if (percent < 100) setUploadStage("uploading");
+                },
+                onUploadComplete: () => {
+                    setUploadProgress(100);
+                    setUploadStage("processing");
+                },
             });
 
             const data = await response.json().catch(() => ({}));
@@ -137,6 +150,8 @@ export default function useVideoUpload() {
             setError(t.generalError);
         } finally {
             setLoading(false);
+            setUploadProgress(null);
+            setUploadStage(null);
         }
     };
 
@@ -153,6 +168,8 @@ export default function useVideoUpload() {
         categories,
         loading,
         error,
+        uploadProgress,
+        uploadStage,
         handleUpload,
     };
 }

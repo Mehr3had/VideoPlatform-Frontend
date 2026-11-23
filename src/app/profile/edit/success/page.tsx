@@ -59,13 +59,29 @@ function EditProfileSuccessContent() {
                     )}
 
                     <Link
-                        href="/"
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-center font-medium text-gray-700 transition hover:border-[var(--accent)] hover:text-[var(--accent)] dark:border-[#404040] dark:bg-[#252525] dark:text-gray-200"
-                    >
-                        {isPersian
-                            ? "بازگشت به صفحه اصلی"
-                            : "Back to home"}
-                    </Link>
+    href="/"
+    aria-label={isPersian ? "Home" : "Back to home"}
+    title={isPersian ? "Home" : "Back to home"}
+    className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:border-[#404040] dark:bg-[#252525] dark:text-gray-200"
+>
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-5"
+        aria-hidden="true"
+    >
+        {isPersian ? (
+            <path d="M5 12h14m-7-7 7 7-7 7" />
+        ) : (
+            <path d="M19 12H5m7 7-7-7 7-7" />
+        )}
+    </svg>
+</Link>
                 </div>
             </div>
         </main>

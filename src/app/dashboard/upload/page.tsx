@@ -18,6 +18,8 @@ export default function UploadPage() {
         categories,
         loading,
         error,
+        uploadProgress,
+        uploadStage,
         handleUpload,
     } = useVideoUpload();
 
@@ -43,6 +45,8 @@ export default function UploadPage() {
                     categories={categories}
                     loading={loading}
                     error={error}
+                    uploadProgress={uploadProgress}
+                    uploadStage={uploadStage}
                     handleUpload={handleUpload}
                 />
             </section>

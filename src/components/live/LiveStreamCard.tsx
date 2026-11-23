@@ -40,19 +40,37 @@ export default function LiveStreamCard({ stream }: LiveStreamCardProps) {
                 </span>
             </div>
 
-            <div className="p-4">
-                <h3 className="line-clamp-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <div className="p-3 md:p-4">
+                <h3 className="line-clamp-2 text-base font-semibold text-gray-900 dark:text-gray-100 md:text-lg">
                     {stream.title}
                 </h3>
 
-                <p className="mt-2 flex flex-wrap items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                    <span>
-                        {isPersian ? "در حال پخش از" : "Streaming from"}
-                    </span>
-                    <bdi dir="auto" className="font-medium text-gray-700 dark:text-gray-300">
-                        {stream.owner.username}
-                    </bdi>
-                </p>
+                <div className="mt-2 flex min-w-0 items-center gap-2 md:mt-3">
+                    {stream.owner.profile_image ? (
+                        <img
+                            src={stream.owner.profile_image}
+                            alt={stream.owner.username}
+                            loading="lazy"
+                            className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-gray-200 dark:ring-[#404040]"
+                        />
+                    ) : (
+                        <div
+                            aria-hidden="true"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-600 dark:bg-[#303030] dark:text-gray-300"
+                        >
+                            {stream.owner.username.slice(0, 1).toUpperCase()}
+                        </div>
+                    )}
+
+                    <p className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-gray-500 dark:text-gray-400 md:text-sm">
+                        <span>
+                            {isPersian ? "در حال پخش از" : "Streaming from"}
+                        </span>
+                        <bdi dir="auto" className="font-medium text-gray-700 dark:text-gray-300">
+                            {stream.owner.username}
+                        </bdi>
+                    </p>
+                </div>
             </div>
         </Link>
     );
