@@ -7,7 +7,7 @@ A responsive video-sharing platform frontend built with Next.js, React, and Type
 - **Backend:** [VideoPlatform-Backend](https://github.com/Mehr3had/VideoPlatform-Backend)
 - **Frontend:** [VideoPlatform-Frontend](https://github.com/Mehr3had/VideoPlatform-Frontend)
 
-- ## Screenshots
+## Screenshots
 
 <table>
   <tr>
