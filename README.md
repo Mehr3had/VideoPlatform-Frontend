@@ -9,15 +9,24 @@ A responsive video-sharing platform frontend built with Next.js, React, and Type
 
 - ## Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/home.png" width="49%" alt="Home Page">
-  <img src="docs/screenshots/video-player.png" width="49%" alt="Video Player">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/profile.png" width="49%" alt="Creator Profile">
-  <img src="docs/screenshots/settings.png" width="49%" alt="User Settings">
-</p>
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/home.png" width="100%" alt="Home Page">
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/video-player.png" width="100%" alt="Video Player">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/profile.png" width="100%" alt="Creator Profile">
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/settings.png" width="100%" alt="User Settings">
+    </td>
+  </tr>
+</table>
 
 ## Features
 
