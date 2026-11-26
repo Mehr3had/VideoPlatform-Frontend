@@ -75,7 +75,6 @@ export default function useVideoUpload() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             setError(t.loginRequired);
             router.replace("/login");
             return;
@@ -122,7 +121,6 @@ export default function useVideoUpload() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }

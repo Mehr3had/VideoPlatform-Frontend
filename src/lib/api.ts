@@ -1,7 +1,7 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export const API = `${API_BASE_URL}/videos/api`;
+export const API = `${API_BASE_URL}/videos/api/v1`;
 export const BACKEND_URL = API_BASE_URL;
 
 // Access token exists only in memory.
@@ -28,12 +28,18 @@ export function clearAccessToken(): void {
   accessToken = null;
 }
 
-function getCurrentLanguage(): string {
-  if (typeof window === "undefined") {
-    return "fa";
-  }
+let currentLanguage: "fa" | "en" = "fa";
 
-  return localStorage.getItem("language") === "en" ? "en" : "fa";
+export function setApiLanguage(language: "fa" | "en"): void {
+  currentLanguage = language;
+}
+
+export function getApiLanguage(): "fa" | "en" {
+  return currentLanguage;
+}
+
+function getCurrentLanguage(): string {
+  return getApiLanguage();
 }
 
 // Obtain a CSRF token from Django.

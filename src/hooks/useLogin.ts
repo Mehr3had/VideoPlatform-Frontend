@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -47,15 +46,9 @@ export default function useLogin() {
                 return;
             }
 
-            // Store the access token in memory only.
             setAccessToken(data.access);
 
-            // Remove tokens left by the previous storage strategy.
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-
-            localStorage.setItem("username", data.username);
-
+            window.dispatchEvent(new Event("app:authenticated"));
             router.push("/");
         } catch (error) {
             console.error("Login error:", error);

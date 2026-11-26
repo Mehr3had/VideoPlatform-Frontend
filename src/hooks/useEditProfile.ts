@@ -37,7 +37,6 @@ export default function useEditProfile() {
                 if (cancelled) return;
 
                 if (!token) {
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -48,7 +47,6 @@ export default function useEditProfile() {
 
                 if (response.status === 401) {
                     clearAccessToken();
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -90,7 +88,6 @@ export default function useEditProfile() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -115,7 +112,6 @@ export default function useEditProfile() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }

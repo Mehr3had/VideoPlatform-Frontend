@@ -1,50 +1,102 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { getAccessToken } from "@/lib/api";
+import { saveUserPreferences } from "@/lib/userPreferences";
+
+interface PlayerServerPreferences {
+    playback_rate: number;
+    volume: number;
+    muted: boolean;
+}
 
 interface VideoPlayerState {
     playbackRate: number;
     volume: number;
     muted: boolean;
+    preferencesHydrated: boolean;
     progressByVideo: Record<string, number>;
 
     setPlaybackRate: (rate: number) => void;
     setVolume: (volume: number) => void;
     setMuted: (muted: boolean) => void;
     setVideoProgress: (videoId: string, seconds: number) => void;
+    setProgressMap: (progress: Record<string, number>) => void;
+    hydratePreferences: (preferences: PlayerServerPreferences) => void;
+    resetPlayerState: () => void;
 }
 
-export const useVideoPlayerStore = create<VideoPlayerState>()(
-    persist(
-        (set) => ({
-            playbackRate: 1,
-            volume: 1,
-            muted: false,
-            progressByVideo: {},
+const defaultPlayerState = {
+    playbackRate: 1,
+    volume: 1,
+    muted: false,
+    preferencesHydrated: false,
+    progressByVideo: {},
+};
 
-            setPlaybackRate: (playbackRate) => set({ playbackRate }),
+function persistPlayerPreference(
+    updates: {
+        playback_rate?: number;
+        volume?: number;
+        muted?: boolean;
+    },
+    enabled: boolean
+) {
+    if (!enabled || !getAccessToken()) return;
 
-            setVolume: (volume) => set({ volume }),
+    void saveUserPreferences(updates).catch((error) => {
+        console.error("Could not save player preferences:", error);
+    });
+}
 
-            setMuted: (muted) => set({ muted }),
+export const useVideoPlayerStore = create<VideoPlayerState>()((set) => ({
+    ...defaultPlayerState,
 
-            setVideoProgress: (videoId, seconds) =>
-                set((state) => ({
-                    progressByVideo: {
-                        ...state.progressByVideo,
-                        [videoId]: seconds,
-                    },
-                })),
-
+    setPlaybackRate: (playbackRate) =>
+        set((state) => {
+            persistPlayerPreference(
+                { playback_rate: playbackRate },
+                state.preferencesHydrated
+            );
+            return { playbackRate };
         }),
-        {
-            name: "video-player-settings",
-            storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
-                playbackRate: state.playbackRate,
-                volume: state.volume,
-                muted: state.muted,
-                progressByVideo: state.progressByVideo,
-            }),
-        }
-    )
-);
+
+    setVolume: (volume) =>
+        set((state) => {
+            persistPlayerPreference(
+                { volume },
+                state.preferencesHydrated
+            );
+            return { volume };
+        }),
+
+    setMuted: (muted) =>
+        set((state) => {
+            persistPlayerPreference(
+                { muted },
+                state.preferencesHydrated
+            );
+            return { muted };
+        }),
+
+    setVideoProgress: (videoId, seconds) => {
+        if (!Number.isFinite(seconds) || seconds < 0) return;
+
+        set((state) => ({
+            progressByVideo: {
+                ...state.progressByVideo,
+                [videoId]: seconds,
+            },
+        }));
+    },
+
+    setProgressMap: (progressByVideo) => set({ progressByVideo }),
+
+    hydratePreferences: (preferences) =>
+        set({
+            playbackRate: preferences.playback_rate,
+            volume: preferences.volume,
+            muted: preferences.muted,
+            preferencesHydrated: true,
+        }),
+
+    resetPlayerState: () => set(defaultPlayerState),
+}));

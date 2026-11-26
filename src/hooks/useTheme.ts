@@ -1,25 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useAppearanceStore } from "@/stores/useAppearanceStore";
 
 export function useTheme() {
-    const [darkMode, setDarkMode] = useState(false);
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem("theme");
-        const isDark = savedTheme === "dark";
-
-        setDarkMode(isDark);
-        document.documentElement.classList.toggle("dark", isDark);
-    }, []);
+    const mode = useAppearanceStore((state) => state.mode);
+    const setMode = useAppearanceStore((state) => state.setMode);
 
     const toggleTheme = () => {
-        const nextDarkMode = !darkMode;
-
-        setDarkMode(nextDarkMode);
-        localStorage.setItem("theme", nextDarkMode ? "dark" : "light");
-        document.documentElement.classList.toggle("dark", nextDarkMode);
+        setMode(mode === "dark" ? "light" : "dark");
     };
 
-    return { darkMode, toggleTheme };
+    return {
+        darkMode: mode === "dark",
+        toggleTheme,
+    };
 }

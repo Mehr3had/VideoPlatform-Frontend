@@ -30,9 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             suppressHydrationWarning
         >
             <body className="flex min-h-full flex-col">
-                <AppearanceInitializer />
                 <LanguageProvider>
-                    <QueryProvider>{children}</QueryProvider>
+                    <QueryProvider>
+                        <AppearanceInitializer />
+                        {children}
+                    </QueryProvider>
                 </LanguageProvider>
             </body>
         </html>

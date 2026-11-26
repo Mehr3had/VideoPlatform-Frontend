@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { API, apiFetch, ensureAccessToken, clearAccessToken, getCsrfHeaders } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import {
+    API,
+    apiFetch,
+    ensureAccessToken,
+    clearAccessToken,
+    getCsrfHeaders,
+} from "@/lib/api";
 
 export function useAuth() {
     const [username, setUsername] = useState<string | null>(null);
@@ -9,74 +15,101 @@ export function useAuth() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [profileImage, setProfileImage] = useState<string | null>(null);
 
+    const clearUser = useCallback(() => {
+        setUsername(null);
+        setUserId(null);
+        setIsAdmin(false);
+        setProfileImage(null);
+    }, []);
+
     useEffect(() => {
         let cancelled = false;
+        let requestVersion = 0;
 
         const getCurrentUser = async () => {
-            try {
-                // Remove tokens from the previous localStorage strategy.
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
+            const currentRequest = ++requestVersion;
 
-                // Restore an access token using the HttpOnly cookie.
+            try {
                 const token = await ensureAccessToken();
 
-                if (cancelled) return;
+                if (cancelled || currentRequest !== requestVersion) return;
 
                 if (!token) {
-                    setUsername(null);
-                    setUserId(null);
-                    setIsAdmin(false);
-                    setProfileImage(null);
+                    clearUser();
                     return;
                 }
 
                 const response = await apiFetch(`${API}/me/`);
 
-                if (!response.ok) {
-                    clearAccessToken();
+                if (cancelled || currentRequest !== requestVersion) return;
 
-                    setUsername(null);
-                    setUserId(null);
-                    setIsAdmin(false);
-                    setProfileImage(null);
+                if (!response.ok) {
+                    if (response.status === 401) clearAccessToken();
+                    clearUser();
                     return;
                 }
 
                 const data = await response.json();
 
-                if (cancelled) return;
+                if (cancelled || currentRequest !== requestVersion) return;
 
                 setUsername(data.username);
                 setUserId(data.id);
                 setIsAdmin(data.is_admin === true);
 
-                localStorage.setItem("username", data.username);
-
                 const profileResponse = await apiFetch(
                     `${API}/users/${data.id}/`
                 );
 
-                if (profileResponse.ok) {
+                if (
+                    profileResponse.ok &&
+                    !cancelled &&
+                    currentRequest === requestVersion
+                ) {
                     const profileData = await profileResponse.json();
-
-                    if (!cancelled) {
-                        setProfileImage(
-                            profileData.profile_image ?? null
-                        );
-                    }
+                    setProfileImage(profileData.profile_image ?? null);
                 }
             } catch (error) {
-                console.error("Current user error:", error);
+                if (!cancelled) {
+                    console.error("Current user error:", error);
+                }
             }
         };
 
-        getCurrentUser();
+        const handleAuthenticated = () => {
+            void getCurrentUser();
+        };
+
+        const handleLoggedOut = () => {
+            requestVersion++;
+            clearUser();
+        };
+
+        const handleUserUpdated = () => {
+            void getCurrentUser();
+        };
+
+        void getCurrentUser();
+
+        window.addEventListener("app:authenticated", handleAuthenticated);
+        window.addEventListener("app:logged-out", handleLoggedOut);
+        window.addEventListener("app:user-updated", handleUserUpdated);
 
         return () => {
             cancelled = true;
+            requestVersion++;
+
+            window.removeEventListener(
+                "app:authenticated",
+                handleAuthenticated
+            );
+            window.removeEventListener(
+                "app:logged-out",
+                handleLoggedOut
+            );
+            window.removeEventListener("app:user-updated", handleUserUpdated);
         };
-    }, []);
+    }, [clearUser]);
 
     const logout = async () => {
         try {
@@ -96,15 +129,8 @@ export function useAuth() {
             console.error("Logout request failed:", error);
         } finally {
             clearAccessToken();
-
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("username");
-
-            setUsername(null);
-            setUserId(null);
-            setIsAdmin(false);
-            setProfileImage(null);
+            window.dispatchEvent(new Event("app:logged-out"));
+            clearUser();
         }
     };
 

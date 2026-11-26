@@ -5,6 +5,7 @@ import videojs from "video.js";
 import "video.js/dist/video-js.css";
 import type Player from "video.js/dist/types/player";
 import { useVideoPlayerStore } from "@/stores/useVideoPlayerStore";
+import { API, apiFetch, ensureAccessToken } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { createPortal } from "react-dom";
 
@@ -328,7 +329,8 @@ export default function VideoPlayer({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
     const { isPersian } = useLanguage();
-    const subtitlePreferenceKey =
+
+
         `video-platform:subtitle:${String(videoId)}`;
     const [skipFeedback, setSkipFeedback] = useState<{
         direction: "backward" | "forward";
@@ -1023,12 +1025,32 @@ export default function VideoPlayer({
         selectedSubtitleRef.current = language;
         setSelectedSubtitle(language);
 
-        // Persist the selection separately for each video.
-        try {
-            localStorage.setItem(subtitlePreferenceKey, language);
-        } catch (error) {
-            console.warn("Could not save subtitle preference:", error);
-        }
+        void (async () => {
+            const token = await ensureAccessToken();
+            if (!token) return;
+
+            const response = await apiFetch(
+                `${API}/watch-history/${String(videoId)}/`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        subtitle_language: language,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                console.warn(
+                    "Could not save subtitle preference:",
+                    response.status
+                );
+            }
+        })().catch((error) => {
+            console.error("Subtitle preference request failed:", error);
+        });
 
         const player = playerRef.current;
 
@@ -1071,31 +1093,9 @@ export default function VideoPlayer({
     };
 
     useEffect(() => {
-        let preference = "off";
-
-        try {
-            const saved = localStorage.getItem(subtitlePreferenceKey);
-
-            if (saved === "off") {
-                preference = "off";
-            } else if (
-                saved &&
-                subtitles.some((subtitle) => subtitle.language === saved)
-            ) {
-                preference = saved;
-            } else if (saved) {
-                // Remove an outdated preference.
-                localStorage.removeItem(subtitlePreferenceKey);
-            }
-        } catch (error) {
-            console.warn("Could not restore subtitle preference:", error);
-        }
-
-        // Update the ref before the player initialization effect runs.
-        selectedSubtitleRef.current = preference;
-        setSelectedSubtitle(preference);
-
-    }, [subtitlePreferenceKey, subtitles]);
+        selectedSubtitleRef.current = "off";
+        setSelectedSubtitle("off");
+    }, [videoId]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -1112,6 +1112,24 @@ export default function VideoPlayer({
         let restoreAttempts = 0;
         let restoreSeekInFlight = false;
         let restoreRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+        let watchHistoryLoaded = false;
+        let canPersistWatchHistory = false;
+        let serverProgress = 0;
+        let lastServerSaveAt = 0;
+        let serverSaveInFlight = false;
+
+        type WatchHistoryPayload = {
+            current_time: number;
+            duration: number;
+            subtitle_language: string;
+            completed: boolean;
+        };
+
+        let pendingServerSave: {
+            payload: WatchHistoryPayload;
+            keepalive: boolean;
+        } | null = null;
 
         const videoElement = document.createElement("video-js");
 
@@ -1270,10 +1288,65 @@ export default function VideoPlayer({
             }
         });
 
-        const getProgress = () =>
-            useVideoPlayerStore.getState().progressByVideo[id] ?? 0;
+        const getProgress = () => {
+            if (canPersistWatchHistory) {
+                return serverProgress;
+            }
 
-        const saveProgress = () => {
+            return useVideoPlayerStore
+                .getState()
+                .progressByVideo[id] ?? 0;
+        };
+
+        const sendWatchHistory = (
+            payload: WatchHistoryPayload,
+            keepalive = false
+        ) => {
+            if (!canPersistWatchHistory) return;
+
+            if (serverSaveInFlight) {
+                pendingServerSave = { payload, keepalive };
+                return;
+            }
+
+            serverSaveInFlight = true;
+            lastServerSaveAt = Date.now();
+
+            void apiFetch(`${API}/watch-history/${id}/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+                keepalive,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        console.warn(
+                            "Watch history save failed:",
+                            response.status
+                        );
+                    }
+                })
+                .catch((error) => {
+                    console.error("Watch history save error:", error);
+                })
+                .finally(() => {
+                    serverSaveInFlight = false;
+
+                    const pending = pendingServerSave;
+                    pendingServerSave = null;
+
+                    if (pending) {
+                        sendWatchHistory(
+                            pending.payload,
+                            pending.keepalive
+                        );
+                    }
+                });
+        };
+
+        const saveProgress = (forceServerSave = false) => {
             if (
                 disposed ||
                 player.isDisposed() ||
@@ -1299,10 +1372,27 @@ export default function VideoPlayer({
                 return;
             }
 
+            serverProgress = currentTime;
+
             useVideoPlayerStore
                 .getState()
                 .setVideoProgress(id, currentTime);
+
+            const shouldSave =
+                forceServerSave ||
+                Date.now() - lastServerSaveAt >= 15000;
+
+            if (shouldSave && canPersistWatchHistory) {
+                sendWatchHistory({
+                    current_time: currentTime,
+                    duration,
+                    subtitle_language: selectedSubtitleRef.current,
+                    completed: false,
+                });
+            }
         };
+
+        const saveProgressImmediately = () => saveProgress(true);
 
         const clearRestoreRetry = () => {
             if (restoreRetryTimer !== null) {
@@ -1377,6 +1467,7 @@ export default function VideoPlayer({
             if (
                 disposed ||
                 player.isDisposed() ||
+                !watchHistoryLoaded ||
                 restoredProgress ||
                 restoringProgress
             ) {
@@ -1501,18 +1592,97 @@ export default function VideoPlayer({
         const handleEnded = () => {
             if (disposed || player.isDisposed()) return;
 
+            const duration = player.duration();
+
             useVideoPlayerStore
                 .getState()
                 .setVideoProgress(id, 0);
+
+            serverProgress = 0;
+
+            if (
+                typeof duration === "number" &&
+                Number.isFinite(duration) &&
+                duration > 0
+            ) {
+                sendWatchHistory({
+                    current_time: duration,
+                    duration,
+                    subtitle_language: selectedSubtitleRef.current,
+                    completed: true,
+                }, true);
+            }
         };
 
+        const loadWatchHistory = async () => {
+            try {
+                const response = await apiFetch(
+                    `${API}/watch-history/${id}/`
+                );
+
+                if (disposed) return;
+
+                if (response.ok) {
+                    const history = await response.json();
+
+                    canPersistWatchHistory = true;
+
+                    if (history.exists) {
+                        serverProgress = history.completed
+                            ? 0
+                            : Number(history.current_time) || 0;
+                    } else {
+                        serverProgress =
+                            useVideoPlayerStore
+                                .getState()
+                                .progressByVideo[id] ?? 0;
+                    }
+
+                    useVideoPlayerStore
+                        .getState()
+                        .setVideoProgress(id, serverProgress);
+
+                    const savedSubtitle =
+                        history.exists &&
+                        typeof history.subtitle_language === "string"
+                            ? history.subtitle_language
+                            : "off";
+
+                    const validSubtitle =
+                        savedSubtitle === "off" ||
+                        subtitles.some(
+                            (subtitle) =>
+                                subtitle.language === savedSubtitle
+                        );
+
+                    const preference = validSubtitle
+                        ? savedSubtitle
+                        : "off";
+
+                    selectedSubtitleRef.current = preference;
+                    setSelectedSubtitle(preference);
+
+                    lastServerSaveAt = Date.now();
+                    applySelectedSubtitle();
+                }
+            } catch (error) {
+                console.error("Could not load watch history:", error);
+            } finally {
+                if (!disposed) {
+                    watchHistoryLoaded = true;
+                    restoreProgress();
+                }
+            }
+        };
+
+        void loadWatchHistory();
         player.on("loadedmetadata", restoreProgress);
         player.on("durationchange", restoreProgress);
         player.on("loadeddata", handleRestoreCheck);
         player.on("canplay", handleRestoreCheck);
         player.on("seeked", handleSeeked);
         player.on("timeupdate", handleTimeUpdate);
-        player.on("pause", saveProgress);
+        player.on("pause", saveProgressImmediately);
         player.on("ended", handleEnded);
         player.on("ratechange", handleRateChange);
         player.on("volumechange", handleVolumeChange);
@@ -1546,7 +1716,8 @@ export default function VideoPlayer({
                 if (
                     restoredProgress &&
                     !restoringProgress &&
-                    !player.seeking()
+                    !player.seeking() &&
+                    !player.ended()
                 ) {
                     const currentTime = player.currentTime();
                     const duration = player.duration();
@@ -1559,9 +1730,18 @@ export default function VideoPlayer({
                         Number.isFinite(duration) &&
                         duration > 0
                     ) {
+                        serverProgress = currentTime;
+
                         useVideoPlayerStore
                             .getState()
                             .setVideoProgress(id, currentTime);
+
+                        sendWatchHistory({
+                            current_time: currentTime,
+                            duration,
+                            subtitle_language: selectedSubtitleRef.current,
+                            completed: false,
+                        }, true);
                     }
                 }
 
@@ -1571,7 +1751,7 @@ export default function VideoPlayer({
                 player.off("canplay", handleRestoreCheck);
                 player.off("seeked", handleSeeked);
                 player.off("timeupdate", handleTimeUpdate);
-                player.off("pause", saveProgress);
+                player.off("pause", saveProgressImmediately);
                 player.off("ended", handleEnded);
                 player.off("ratechange", handleRateChange);
                 player.off("volumechange", handleVolumeChange);

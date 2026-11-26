@@ -12,6 +12,7 @@ import VideoPlayer from "@/components/videos/VideoPlayer";
 import { PISHI_STICKERS } from "@/lib/stickers";
 import ConfirmDeleteComment from "@/components/comments/ConfirmDeleteComment";
 import CommentErrorDialog from "@/components/comments/CommentErrorDialog";
+import ShareVideoSuccessDialog from "@/components/videos/ShareVideoSuccessDialog";
 
 export default function VideoDetailPage() {
     const { language, isPersian } = useLanguage();
@@ -52,6 +53,51 @@ export default function VideoDetailPage() {
         submittingVideoReport,
         handleReportVideo,
     } = useVideoDetail();
+
+    const [shareDialog, setShareDialog] = useState<{
+        url: string;
+        status: "success" | "error";
+    } | null>(null);
+
+    const copyVideoLink = async (url: string) => {
+        let copied = false;
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+                copied = true;
+            }
+        } catch {
+            // Try the fallback below.
+        }
+
+        if (!copied) {
+            const textArea = document.createElement("textarea");
+            textArea.value = url;
+            textArea.setAttribute("readonly", "");
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+
+            try {
+                textArea.select();
+                copied = document.execCommand("copy");
+            } catch {
+                copied = false;
+            } finally {
+                textArea.remove();
+            }
+        }
+
+        setShareDialog({
+            url,
+            status: copied ? "success" : "error",
+        });
+    };
+
+    const handleShareVideo = () => {
+        void copyVideoLink(window.location.href);
+    };
 
     const commentFormRef = useRef<HTMLFormElement>(null);
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -346,12 +392,7 @@ export default function VideoDetailPage() {
                     </button>
 
                     <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(
-                                window.location.href
-                            );
-                            alert(t.linkCopied);
-                        }}
+                        onClick={() => handleShareVideo()}
                         aria-label={t.share} className={`group relative rounded-lg border border-gray-300 bg-white py-2 font-medium text-gray-700 whitespace-nowrap transition hover:bg-gray-50 dark:border-[#404040] dark:bg-[#202020] dark:text-gray-300 dark:hover:bg-[#303030] ${
                             isPersian
                                 ? "px-2.5 text-xs sm:px-5 sm:text-base"
@@ -794,6 +835,17 @@ export default function VideoDetailPage() {
                 isLoading={isDeletingComment}
                 onConfirm={handleConfirmCommentDelete}
                 onCancel={() => setCommentToDelete(null)}
+            />
+            <ShareVideoSuccessDialog
+                isOpen={shareDialog !== null}
+                url={shareDialog?.url ?? ""}
+                status={shareDialog?.status ?? "success"}
+                onClose={() => setShareDialog(null)}
+                onCopyAgain={() => {
+                    if (shareDialog) {
+                        void copyVideoLink(shareDialog.url);
+                    }
+                }}
             />
             <CommentErrorDialog
                 isOpen={commentError !== null}

@@ -77,7 +77,6 @@ export default function useAdminReports() {
                 if (cancelled) return;
 
                 if (!token) {
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -86,7 +85,6 @@ export default function useAdminReports() {
 
                 if (!response.ok) {
                     clearAccessToken();
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -129,7 +127,6 @@ export default function useAdminReports() {
         if (!token) {
             setReportsError("Please log in again.");
             setReportsLoading(false);
-            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -154,7 +151,6 @@ export default function useAdminReports() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -205,7 +201,6 @@ export default function useAdminReports() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -230,7 +225,6 @@ export default function useAdminReports() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -298,7 +292,6 @@ export default function useAdminReports() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -316,7 +309,6 @@ export default function useAdminReports() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }

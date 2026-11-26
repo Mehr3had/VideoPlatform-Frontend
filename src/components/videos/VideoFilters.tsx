@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
-import { API } from "@/lib/api";
+import { API, apiFetch, ensureAccessToken } from "@/lib/api";
 
-const SEARCH_HISTORY_KEY = "video-platform-search-history";
 const MAX_SEARCH_HISTORY = 5;
 
 interface Category {
@@ -57,47 +56,78 @@ export default function VideoFilters({
     const categoryDropdownRef = useRef<HTMLDivElement>(null);
     const categoryTriggerRef = useRef<HTMLButtonElement>(null);
 
-    // Load recent searches from localStorage.
+    // Load recent searches from the backend.
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
+        let cancelled = false;
+        let generation = 0;
 
-            if (!stored) {
-                return;
+        const loadRecentSearches = async () => {
+            const currentGeneration = ++generation;
+
+            try {
+                const token = await ensureAccessToken();
+
+                if (cancelled || currentGeneration !== generation) return;
+
+                if (!token) {
+                    setRecentSearches([]);
+                    return;
+                }
+
+                const response = await apiFetch(`${API}/search-history/`);
+
+                if (!response.ok) {
+                    throw new Error(`Search history load failed: ${response.status}`);
+                }
+
+                const data: { results?: unknown } = await response.json();
+
+                if (cancelled || currentGeneration !== generation) return;
+
+                const normalized = Array.isArray(data.results)
+                    ? data.results
+                        .filter((item): item is string => typeof item === "string")
+                        .map((item) => item.trim())
+                        .filter(Boolean)
+                        .slice(0, MAX_SEARCH_HISTORY)
+                    : [];
+
+                setRecentSearches(normalized);
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Failed to load search history:", error);
+                }
             }
+        };
 
-            const parsed: unknown = JSON.parse(stored);
+        const handleAuthenticated = () => {
+            void loadRecentSearches();
+        };
 
-            if (!Array.isArray(parsed)) {
-                return;
-            }
+        const handleLoggedOut = () => {
+            generation++;
+            setRecentSearches([]);
+            setShowSearchHistory(false);
+        };
 
-            const normalized = parsed
-                .filter((item): item is string => typeof item === "string")
-                .map((item) => item.trim())
-                .filter(Boolean)
-                .filter(
-                    (item, index, items) =>
-                        items.findIndex(
-                            (candidate) =>
-                                candidate.toLowerCase() === item.toLowerCase()
-                        ) === index
-                )
-                .slice(0, MAX_SEARCH_HISTORY);
+        void loadRecentSearches();
 
-            setRecentSearches(normalized);
-        } catch (error) {
-            console.error("Failed to load search history:", error);
-        }
+        window.addEventListener("app:authenticated", handleAuthenticated);
+        window.addEventListener("app:logged-out", handleLoggedOut);
+
+        return () => {
+            cancelled = true;
+            generation++;
+
+            window.removeEventListener("app:authenticated", handleAuthenticated);
+            window.removeEventListener("app:logged-out", handleLoggedOut);
+        };
     }, []);
 
-    // Save a search without duplicates and keep only the latest five.
+    // Save recent searches on the backend for authenticated users.
     const saveRecentSearch = (value: string) => {
         const normalized = value.trim();
-
-        if (!normalized) {
-            return;
-        }
+        if (!normalized) return;
 
         const nextHistory = [
             normalized,
@@ -108,54 +138,90 @@ export default function VideoFilters({
 
         setRecentSearches(nextHistory);
 
-        try {
-            localStorage.setItem(
-                SEARCH_HISTORY_KEY,
-                JSON.stringify(nextHistory)
-            );
-        } catch (error) {
-            console.error("Failed to save search history:", error);
-        }
+        void (async () => {
+            try {
+                const token = await ensureAccessToken();
+                if (!token) return;
+
+                const response = await apiFetch(`${API}/search-history/`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: normalized }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Search history save failed: ${response.status}`);
+                }
+
+                const data: { results?: unknown } = await response.json();
+
+                if (Array.isArray(data.results)) {
+                    setRecentSearches(
+                        data.results
+                            .filter((item): item is string => typeof item === "string")
+                            .slice(0, MAX_SEARCH_HISTORY)
+                    );
+                }
+            } catch (error) {
+                console.error("Failed to save search history:", error);
+            }
+        })();
     };
 
-    // Remove one item from the history.
+    // Remove one recent search.
     const removeRecentSearch = (value: string) => {
-        const nextHistory = recentSearches.filter(
-            (item) => item !== value
-        );
+        const nextHistory = recentSearches.filter((item) => item !== value);
 
         setRecentSearches(nextHistory);
+        setActiveIndex(-1);
 
-        try {
-            if (nextHistory.length > 0) {
-                localStorage.setItem(
-                    SEARCH_HISTORY_KEY,
-                    JSON.stringify(nextHistory)
-                );
-            } else {
-                localStorage.removeItem(SEARCH_HISTORY_KEY);
-                setShowSearchHistory(false);
-            }
-        } catch (error) {
-            console.error("Failed to update search history:", error);
+        if (nextHistory.length === 0) {
+            setShowSearchHistory(false);
         }
 
-        setActiveIndex(-1);
+        void (async () => {
+            try {
+                const token = await ensureAccessToken();
+                if (!token) return;
+
+                const response = await apiFetch(
+                    `${API}/search-history/?query=${encodeURIComponent(value)}`,
+                    { method: "DELETE" }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Search history delete failed: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("Failed to remove search history:", error);
+            }
+        })();
     };
 
-    // Clear the entire search history.
+    // Clear all recent searches.
     const clearSearchHistory = () => {
         setRecentSearches([]);
         setShowSearchHistory(false);
         setActiveIndex(-1);
 
-        try {
-            localStorage.removeItem(SEARCH_HISTORY_KEY);
-        } catch (error) {
-            console.error("Failed to clear search history:", error);
-        }
-    };
+        void (async () => {
+            try {
+                const token = await ensureAccessToken();
+                if (!token) return;
 
+                const response = await apiFetch(
+                    `${API}/search-history/`,
+                    { method: "DELETE" }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Search history clear failed: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("Failed to clear search history:", error);
+            }
+        })();
+    };
     // Close dropdowns and release input focus.
     const closeDropdowns = () => {
         setShowSuggestions(false);

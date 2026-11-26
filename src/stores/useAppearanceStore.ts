@@ -1,10 +1,9 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { saveUserPreferences } from "@/lib/userPreferences";
 
 type ThemeMode = "light" | "dark";
-
 type BackgroundStyle = "default" | "soft" | "blue";
 
 interface AppearanceState {
@@ -24,23 +23,42 @@ const defaultAppearance = {
     backgroundStyle: "default" as BackgroundStyle,
 };
 
-export const useAppearanceStore = create<AppearanceState>()(
-    persist(
-        (set) => ({
-            ...defaultAppearance,
+function saveAppearance(
+    updates: {
+        theme?: ThemeMode;
+        accent?: string;
+        background_style?: BackgroundStyle;
+    }
+) {
+    void saveUserPreferences(updates).catch((error) => {
+        console.error("Could not save appearance settings:", error);
+    });
+}
 
-            setMode: (mode) => set({ mode }),
+export const useAppearanceStore = create<AppearanceState>()((set) => ({
+    ...defaultAppearance,
 
-            setAccent: (accent) => set({ accent }),
+    setMode: (mode) => {
+        set({ mode });
+        saveAppearance({ theme: mode });
+    },
 
-            setBackgroundStyle: (backgroundStyle) =>
-                set({ backgroundStyle }),
+    setAccent: (accent) => {
+        set({ accent });
+        saveAppearance({ accent });
+    },
 
-            resetAppearance: () => set(defaultAppearance),
-        }),
-        {
-            name: "video-platform-appearance",
-            storage: createJSONStorage(() => localStorage),
-        }
-    )
-);
+    setBackgroundStyle: (backgroundStyle) => {
+        set({ backgroundStyle });
+        saveAppearance({ background_style: backgroundStyle });
+    },
+
+    resetAppearance: () => {
+        set(defaultAppearance);
+        saveAppearance({
+            theme: defaultAppearance.mode,
+            accent: defaultAppearance.accent,
+            background_style: defaultAppearance.backgroundStyle,
+        });
+    },
+}));

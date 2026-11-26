@@ -39,7 +39,6 @@ export default function useAccountSettings() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.replace("/login");
             return false;
         }
@@ -77,7 +76,6 @@ export default function useAccountSettings() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -90,7 +88,7 @@ export default function useAccountSettings() {
 
             if (data.username) {
                 setNewUsername(data.username);
-                localStorage.setItem("username", data.username);
+                window.dispatchEvent(new Event("app:user-updated"));
             }
 
             setUsernameMessage(t.usernameSuccess);
@@ -135,7 +133,6 @@ export default function useAccountSettings() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -181,7 +178,6 @@ export default function useAccountSettings() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }
@@ -215,9 +211,6 @@ export default function useAccountSettings() {
 
             clearAccessToken();
 
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("username");
 
             setDeletePassword("");
             router.replace("/login");

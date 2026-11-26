@@ -51,7 +51,6 @@ export default function useEditVideo() {
                 if (cancelled) return;
 
                 if (!token) {
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -62,7 +61,6 @@ export default function useEditVideo() {
 
                 if (response.status === 401) {
                     clearAccessToken();
-                    localStorage.removeItem("username");
                     router.replace("/login");
                     return;
                 }
@@ -129,7 +127,6 @@ export default function useEditVideo() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.replace("/login");
             return;
         }
@@ -163,7 +160,6 @@ export default function useEditVideo() {
 
             if (response.status === 401) {
                 clearAccessToken();
-                localStorage.removeItem("username");
                 router.replace("/login");
                 return;
             }

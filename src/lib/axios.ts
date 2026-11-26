@@ -6,6 +6,7 @@ import axios, {
 import {
   API,
   getAccessToken,
+  getApiLanguage,
   refreshAccessToken,
 } from "@/lib/api";
 
@@ -21,13 +22,7 @@ export const axiosClient = axios.create({
   },
 });
 
-function getCurrentLanguage(): string {
-  if (typeof window === "undefined") {
-    return "fa";
-  }
 
-  return localStorage.getItem("language") === "en" ? "en" : "fa";
-}
 
 // Attach the shared in-memory access token to every request.
 axiosClient.interceptors.request.use((config) => {
@@ -37,7 +32,7 @@ axiosClient.interceptors.request.use((config) => {
   ) {
     config.headers.delete("Content-Type");
   }
-  config.headers.set("Accept-Language", getCurrentLanguage());
+  config.headers.set("Accept-Language", getApiLanguage());
 
   const token = getAccessToken();
 

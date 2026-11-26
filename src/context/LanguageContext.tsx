@@ -8,12 +8,15 @@ import {
     useState,
     type ReactNode,
 } from "react";
+import { setApiLanguage } from "@/lib/api";
+import { saveUserPreferences } from "@/lib/userPreferences";
+import { getAccessToken } from "@/lib/api";
 
 export type Language = "fa" | "en";
 
 type LanguageContextType = {
     language: Language;
-    setLanguage: (language: Language) => void;
+    setLanguage: (language: Language, persist?: boolean) => void;
     isPersian: boolean;
 };
 
@@ -23,30 +26,28 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
     const [language, setLanguageState] = useState<Language>("fa");
-    const [initialized, setInitialized] = useState(false);
+
+    const setLanguage = useCallback(
+        (nextLanguage: Language, persist = true) => {
+            setLanguageState(nextLanguage);
+            setApiLanguage(nextLanguage);
+
+            if (persist && getAccessToken()) {
+                void saveUserPreferences({
+                    language: nextLanguage,
+                }).catch((error) => {
+                    console.error("Could not save language preference:", error);
+                });
+            }
+        },
+        []
+    );
 
     useEffect(() => {
-        const savedLanguage = localStorage.getItem("language");
-
-        if (savedLanguage === "fa" || savedLanguage === "en") {
-            setLanguageState(savedLanguage);
-        }
-
-        setInitialized(true);
-    }, []);
-
-    useEffect(() => {
-        if (!initialized) return;
-
+        setApiLanguage(language);
         document.documentElement.lang = language;
         document.documentElement.dir = language === "fa" ? "rtl" : "ltr";
-        localStorage.setItem("language", language);
-    }, [language, initialized]);
-
-    const setLanguage = useCallback((nextLanguage: Language) => {
-        localStorage.setItem("language", nextLanguage);
-        setLanguageState(nextLanguage);
-    }, []);
+    }, [language]);
 
     return (
         <LanguageContext.Provider

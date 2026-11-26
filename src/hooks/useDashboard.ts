@@ -63,7 +63,6 @@ export function useDashboard() {
                 if (cancelled) return;
 
                 if (!token) {
-                    localStorage.removeItem("username");
                     router.push("/login");
                     return;
                 }
@@ -74,7 +73,6 @@ export function useDashboard() {
 
                 if (response.status === 401) {
                     clearAccessToken();
-                    localStorage.removeItem("username");
                     router.push("/login");
                     return;
                 }
@@ -122,7 +120,6 @@ export function useDashboard() {
         const token = await ensureAccessToken();
 
         if (!token) {
-            localStorage.removeItem("username");
             router.push("/login");
             return { success: false };
         }
@@ -138,7 +135,6 @@ export function useDashboard() {
             if (!response.ok) {
                 if (response.status === 401) {
                     clearAccessToken();
-                    localStorage.removeItem("username");
                     router.push("/login");
                     return { success: false };
                 }
