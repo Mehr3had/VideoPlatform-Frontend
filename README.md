@@ -101,6 +101,43 @@ Live publishing and playback require the companion backend and a configured Medi
 - Centralized API clients.
 - Shared client-state stores.
 
+## Data Persistence and State Management
+
+The frontend separates persistent user data from temporary UI state.
+
+### Backend-persisted data
+
+The Django backend is the source of truth for persistent user data, including:
+
+- User preferences such as language, theme, accent color, and background style.
+- Video playback preferences such as playback speed, volume, and mute state.
+- Watch history, including playback position, selected subtitle language, and completion status.
+- Recent search history.
+
+Authenticated users retrieve and update this information through the versioned API:
+
+`/videos/api/v1/`
+
+### Frontend state
+
+The frontend uses React state, Zustand, and TanStack Query to manage:
+
+- Temporary UI interactions and component state.
+- Client-side application state.
+- Cached server responses.
+- Playback progress used by the interface during a session.
+
+The frontend does not use browser localStorage or sessionStorage
+to persist application data.
+
+### Authentication
+
+- Access tokens are kept in memory.
+- Refresh tokens are handled through an HttpOnly cookie.
+- Access tokens can be restored through the backend refresh endpoint.
+- Authentication state and user-specific query caches are cleared on logout.
+- Guest users can use temporary in-memory preferences and search state, which are not persisted to the backend.
+
 ## Tech stack
 
 | Technology | Purpose |
